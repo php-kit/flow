@@ -1,0 +1,27 @@
+{
+  "name": "impactwave/flow",
+  "license": "MIT",
+  "description": "Iterator Nirvana for PHP",
+  "keywords": [
+    "iterators",
+    "generators",
+    "fluent"
+  ],
+  "homepage": "https://github.com/impactwave/flow",
+  "authors": [
+    {
+      "name": "Impactwave",
+      "email": "impactwave@impactwave.com",
+      "homepage": "http://impactwave.com"
+    },
+    {
+      "name": "Cláudio Silva",
+      "email": "claudio.silva@impactwave.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Flow\\": "src/"
+    }
+  }
+}
