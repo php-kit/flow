@@ -5,12 +5,16 @@ use ArrayIterator;
 use CallbackFilterIterator;
 use EmptyIterator;
 use Flow\Iterators\CachedIterator;
+use Flow\Iterators\ConditionalIterator;
+use Flow\Iterators\FlipIterator;
 use Flow\Iterators\FunctionIterator;
 use Flow\Iterators\LoopIterator;
 use Flow\Iterators\MacroIterator;
 use Flow\Iterators\MapIterator;
 use Flow\Iterators\RangeIterator;
 use Flow\Iterators\RecursiveIterator;
+use Flow\Iterators\ReduceIterator;
+use Flow\Iterators\ReindexIterator;
 use InvalidArgumentException;
 use Iterator;
 use IteratorAggregate;
@@ -19,7 +23,6 @@ use MultipleIterator;
 use NoRewindIterator;
 use RecursiveIteratorIterator;
 use RegexIterator;
-use Traversable;
 
 /**
  * Provides a fluent interface to assemble chains of iterators and other data processing operations.
@@ -32,14 +35,17 @@ use Traversable;
  * storing in memory the resulting data from intermediate steps. When operating over large data sets, this mechanism
  * can be very light on memory consumption.
  *
- * <p>Inputs to the chain can be any kind of {@see Traversable}, i.e. native arrays, classes implementing
- * {@see Iterator} or {@see IteratorAggregate}, or the result of invoking a generator function (on PHP>=5.5).
- * Additionaly, callable inputs (ex. Closures) will be converted to {@see FunctionIterator} instances, allowing you to
- * write generator function look-alikes on PHP<5.5.
+ * <p>Inputs to the chain can be any kind of **iterables**. Iterables are things that can be converted to iterators.
+ * They can be native arrays, {@see Traversable}s (classes implementing the native {@see Iterator} or
+ * {@see IteratorAggregate} intefaces), invoked generator functions (on PHP>=5.5) or, additionaly, callables (ex.
+ * {@see Closure}s),
+ * which will be converted to {@see FunctionIterator} instances, allowing you to write generator function look-alikes
+ * on PHP<5.5.
  *
  * <p>Note: Some operations require the iteration data to be "materialized", i.e. fully iterated and stored internally
  * as an array, before the operation is applied. This only happens for operations that require all data to be present
- * (ex: `reverse()` or `sort()`), and the resulting data will be automatically converted back to an iterator whenever it
+ * (ex: `reverse()` or `sort()`), and the resulting data will be automatically converted back to an iterator whenever
+ * it
  * makes sense.
  */
 class Flow implements IteratorAggregate
@@ -65,7 +71,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Sets the initial data/iterator.
-   * @param array|Traversable $src
+   * @param mixed $src An iterable,
    */
   function __construct ($src = [])
   {
@@ -73,7 +79,7 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Creates a Flow from a list of Traversable inputs that iterates over all of them in parallel.
+   * Creates a Flow from a list of iterable inputs that iterates over all of them in parallel.
    *
    * The generated sequence is comprised of array items where each one contains an iteration step from each one of the
    * inputs. The key for the value from each input corresponds (by default) to the original key for the
@@ -83,12 +89,12 @@ class Flow implements IteratorAggregate
    *
    * You can change these behaviours using the `$flags` argument.
    *
-   * @param Traversable|array $inputs A list of Traversable inputs.
-   * @param array|null        $fields A list or map of key names for use on the resulting array items. If not
-   *                                  specified, the original iterator's keys will be used or numerical autoincremented
-   *                                  indexes, depending on the `$flags`.
-   * @param int               $flags  One or more of the MultipleIterator::MIT_XXX constants.
-   *                                  <p>Default: MIT_NEED_ANY | MIT_KEYS_ASSOC
+   * @param mixed      $inputs A sequence of iterable inputs.
+   * @param array|null $fields A list or map of key names for use on the resulting array items. If not
+   *                           specified, the original iterator's keys will be used or numerical autoincremented
+   *                           indexes, depending on the `$flags`.
+   * @param int        $flags  One or more of the MultipleIterator::MIT_XXX constants.
+   *                           <p>Default: MIT_NEED_ANY | MIT_KEYS_ASSOC
    * @return static
    */
   static function combine ($inputs, array $fields = null, $flags = 2)
@@ -100,7 +106,7 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * @param array|Traversable $src
+   * @param mixed $src An iterable.
    * @return static
    */
   static function from ($src)
@@ -110,7 +116,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Converts the argument into an iterator.
-   * @param Traversable|array|callable $t
+   * @param mixed $t An iterable.
    * @return Iterator
    */
   static function iteratorFrom ($t)
@@ -143,14 +149,14 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Concatenates the specified Traversables and iterates them in sequence.
-   * @param Traversable[] $list
+   * Concatenates the specified iterables and iterates them in sequence.
+   * @param mixed $list A sequence of iterables.
    * @return static
    */
-  static function sequence (array $list)
+  static function sequence ($list)
   {
     $a = new AppendIterator;
-    foreach ($list as $it)
+    foreach (self::iteratorFrom ($list) as $it)
       $a->append (self::iteratorFrom ($it));
     return new static ($a);
   }
@@ -179,14 +185,14 @@ class Flow implements IteratorAggregate
 
   /**
    * Appends one or more iterators to the current one and sets a new iterator that iterates over all of them.
-   * @param Traversable[] $list Iterators to append.
+   * @param mixed $list A sequence of iterables to append.
    * @return $this
    */
   function append ($list)
   {
     $a = new AppendIterator;
     $a->append ($this->getIterator ());
-    foreach ($list as $it)
+    foreach (self::iteratorFrom ($list) as $it)
       $a->append (self::iteratorFrom ($it));
     $this->setIterator ($a);
     return $this;
@@ -199,22 +205,22 @@ class Flow implements IteratorAggregate
    * ```
    *   Query::range (1,10)->apply ('RegexIterator', '/^1/')->all ()
    * ```
-   * @param string $iteratorClass The name of an iterator or iterator aggregate class whose constructor receives an
-   *                              iterator as a first argument.
-   * @param mixed  ...$args       Additional arguments for the external iterator's constructor.
+   * @param string $traversableClass The name of a {@see Traversable} class whose constructor receives an
+   *                                 iterator as a first argument.
+   * @param mixed  ...$args          Additional arguments for the external iterator's constructor.
    * @return $this
    */
-  function apply ($iteratorClass)
+  function apply ($traversableClass)
   {
     $args    = func_get_args ();
     $args[0] = $this->getIterator ();
-    $c       = new \ReflectionClass ($iteratorClass);
+    $c       = new \ReflectionClass ($traversableClass);
     $this->setIterator ($c->newInstanceArgs ($args));
     return $this;
   }
 
   /**
-   * Memoize the current iterator's values so that subsequent iterations will not need to iterate it again.
+   * *Memoize* the current iterator's values so that subsequent iterations will not need to iterate it again.
    * @return $this
    */
   function cache ()
@@ -224,7 +230,7 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Assumes the current iterator is composed of arrays or iterators and sets a new iterator that iterates over all of
+   * Assumes the current iterator is composed of arrays or iterables and sets a new iterator that iterates over all of
    * them.
    * @return $this
    */
@@ -267,12 +273,22 @@ class Flow implements IteratorAggregate
   /**
    * Replaces each value on the current iterator by the values generated by a new iterator.
    * @param callable $fn A callback that receives the current outer iterator item's value and key and returns the
-   *                     corresponding inner Traversable or array.
+   *                     corresponding inner iterable.
    * @return $this
    */
   function expand (callable $fn)
   {
     $this->setIterator (new MacroIterator ($this->getIterator (), $fn));
+    return $this;
+  }
+
+  /**
+   * Swaps values for the corresponding keys.
+   * @return $this
+   */
+  function flip ()
+  {
+    $this->setIterator (new FlipIterator ($this->getIterator ()));
     return $this;
   }
 
@@ -313,26 +329,13 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Replaces values by the corresponding keys.
+   * Replaces values by the corresponding keys and sets the keys to increasing integer indexes starting from 0.
    * @return $this
    */
   function keys ()
   {
-    $this->setIterator (new MapIterator ($this->getIterator (), function ($v, $k) { return $k; }));
-    return $this;
-  }
-
-  /**
-   * Repeats the iteration `$n` items.
-   * <p>If `$n` > iterator count, this will have no effect.
-   * @param int $n
-   * @return $this
-   */
-  function loop ($n)
-  {
-    $this->setIterator (new LoopIterator ($this->getIterator ()));
-    $this->it->loop ($n);
-    return $this;
+    $this->setIterator (new FlipIterator ($this->getIterator (), true));
+    return $this->reindex ();
   }
 
   /**
@@ -384,8 +387,8 @@ class Flow implements IteratorAggregate
    */
   function only ($n)
   {
-    $this->setIterator (new LoopIterator ($this->getIterator ()));
-    $this->it->limit ($n);
+    $this->setIterator ($it = new LoopIterator ($this->getIterator ()));
+    $it->limit ($n);
     return $this;
   }
 
@@ -407,13 +410,32 @@ class Flow implements IteratorAggregate
   /**
    * Wraps a recursive iterator over the current iterator.
    * @param callable $fn A callback that receives the current node's value, key and nesting depth, and returns an
-   *                     array or {@see Traversable} for the node's children or `null` if the node has no
-   *                     children.
+   *                     iterable for the node's children or `null` if the node has no children.
    * @return $this
    */
   function recursive (callable $fn)
   {
     $this->setIterator (new RecursiveIteratorIterator (new RecursiveIterator ($this->getIterator (), $fn)));
+    return $this;
+  }
+
+  /**
+   * Applies a function against an accumulator and each value of the iteration to reduce the iterated data to a single
+   * value.
+   * This iterator exposes an iteration with a single value: the final result of the reduction.
+   * @param callable $fn        Callback to execute for each value of the iteration, taking 3 arguments:
+   *                            <dl>
+   *                            <dt>$previousValue<dd>The value previously returned in the last invocation of the
+   *                            callback, or `$seedValue`, if supplied.
+   *                            <dt>$urrentValue <dd>The current element being iterated.
+   *                            <dt>$key <dd>The index/key of the current element being iterated.
+   *                            </dl>
+   * @param mixed    $seedValue Optional value to use as the first argument to the first call of the callback.
+   * @return $this
+   */
+  function reduce (callable $fn, $seedValue = null)
+  {
+    $this->setIterator (new ReduceIterator ($this->getIterator (), $fn, $seedValue));
     return $this;
   }
 
@@ -493,13 +515,34 @@ class Flow implements IteratorAggregate
    */
   function reindex ($i = 0, $st = 1)
   {
-    $this->setIterator (
-      new MapIterator ($this->getIterator (), function ($v, &$k) use (&$i, $st) {
-        $k = $i;
-        $i += $st;
-        return $v;
-      })
-    );
+    $this->setIterator (new ReindexIterator($this->getIterator (), $i, $st));
+    return $this;
+  }
+
+  /**
+   * Repeats the iteration `$n` items.
+   *
+   * <p>Note: 0 = no iteration, &lt; 0 = infinite
+   * @param int             $n
+   * @return $this
+   * @property LoopIterator $it
+   */
+  function repeat ($n)
+  {
+    $this->setIterator ($it = new LoopIterator ($this->getIterator ()));
+    $it->repeat ($n);
+    return $this;
+  }
+
+  /**
+   * Repeats the iteration until the callback returns `false`.
+   * @param callable $fn A callback that receives the current iteration value and key, and returns a boolean.
+   * @return $this
+   */
+  function repeatWhile (callable $fn)
+  {
+    $this->setIterator ($it = new LoopIterator ($this->getIterator ()));
+    $it->test ($fn);
     return $this;
   }
 
@@ -522,7 +565,7 @@ class Flow implements IteratorAggregate
    * Sets the internal iterator.
    *
    * Not recommended for external use. This is used internally to update the first iterator on the chain.
-   * @param mixed $it Should be a Traversable or an array.
+   * @param mixed $it An iterable.
    * @return $this
    */
   function setIterator ($it)
@@ -621,6 +664,17 @@ class Flow implements IteratorAggregate
   {
     $this->setIterator (new RegexIterator ($this->getIterator (), $regexp, RegexIterator::MATCH,
       $useKeys ? RegexIterator::USE_KEY : 0, $preg_flags));
+    return $this;
+  }
+
+  /**
+   * Continues iterating until the iteration finishes or the callback returns `false` (whichever occurs first).
+   * @param callable $fn A callback that receives the current iteration value and key, and returns a boolean.
+   * @return $this
+   */
+  function while_ (callable $fn)
+  {
+    $this->setIterator ($it = new ConditionalIterator ($this->getIterator (), $fn));
     return $this;
   }
 
