@@ -3,7 +3,6 @@ namespace Flow\Iterators;
 use Flow\Flow;
 use Iterator;
 use OuterIterator;
-use Traversable;
 
 /**
  * Replaces and expands each iterated value of another iterator.
@@ -11,7 +10,7 @@ use Traversable;
 class MacroIterator implements OuterIterator
 {
   /**
-   * When this options is set, the resulting iteration preserves the original keys from each successive inner interator.
+   * When this options is set, the resulting iteration preserves the original keys from each successive inner iterator.
    * When not set, keys are auto-incremented integers starting at 0.
    */
   const USE_ORIGINAL_KEYS = 1;
@@ -27,21 +26,21 @@ class MacroIterator implements OuterIterator
   private $outer;
 
   /**
-   * @param Traversable|array|callable $outer The outer iterator.
-   * @param callable                   $fn    A callback that receives the current outer iterator item's value and key
-   *                                          and returns the corresponding inner Traversable or array.
-   * @param int                        $flags Iterator One of the self::XXX constants.
+   * @param mixed    $iterator An iterable.
+   * @param callable $fn       A callback that receives the current outer iterator item's value and key
+   *                           and returns the corresponding inner Traversable or array.
+   * @param int      $flags    Iterator One of the self::XXX constants.
    */
-  function __construct ($outer, callable $fn, $flags = 0)
+  function __construct ($iterator, callable $fn, $flags = 0)
   {
-    $this->outer = Flow::iteratorFrom ($outer);
+    $this->inner = Flow::iteratorFrom ($iterator);
     $this->fn    = $fn;
     $this->flags = $flags;
   }
 
   function current ()
   {
-    return $this->inner->current ();
+    return $this->outer->current ();
   }
 
   function getInnerIterator ()
@@ -51,44 +50,44 @@ class MacroIterator implements OuterIterator
 
   function key ()
   {
-    return $this->flags & self::USE_ORIGINAL_KEYS ? $this->inner->key () : $this->index;
+    return $this->flags & self::USE_ORIGINAL_KEYS ? $this->outer->key () : $this->index;
   }
 
   function next ()
   {
     ++$this->index;
-    $this->inner->next ();
-    while (!$this->inner->valid ()) {
-      $this->outer->next ();
-      if (!$this->outer->valid ()) {
-        $this->inner = null;
-        return;
-      }
-      $this->nextInner ();
+    $this->outer->next ();
+    if (!$this->outer->valid ()) {
+      $this->inner->next ();
+      $this->nextOuter ();
     }
   }
 
   function rewind ()
   {
     $this->index = 0;
-    $this->inner = null;
-    $this->outer->rewind ();
-    while ($this->outer->valid ()) {
-      $this->nextInner ();
-      $this->inner->rewind ();
-      if ($this->inner->valid ()) return;
-      $this->outer->next ();
-    }
+    $this->inner->rewind ();
+    $this->nextOuter ();
   }
 
   function valid ()
   {
-    return $this->inner && $this->inner->valid ();
+    return isset($this->outer);
   }
 
-  protected function nextInner ()
+  /**
+   * Advance the inner iterator until we get a non-empty outer iterator.
+   */
+  function nextOuter ()
   {
-    $fn          = $this->fn;
-    $this->inner = Flow::iteratorFrom ($fn ($this->outer->current (), $this->outer->key ()));
+    while ($this->inner->valid ()) {
+      $fn          = $this->fn;
+      $this->outer = Flow::iteratorFrom ($fn ($this->inner->current (), $this->inner->key ()));
+      $this->outer->rewind ();
+      if ($this->outer->valid ()) return;
+      $this->inner->next ();
+    }
+    $this->outer = null;
   }
+
 }
