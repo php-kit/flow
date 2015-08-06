@@ -3,6 +3,9 @@ namespace Flow\Iterators;
 use ArrayIterator;
 use IteratorIterator;
 
+/**
+ * *Memoizes* another iterator's values so that subsequent iterations will not need to iterate it again.
+ */
 class CachedIterator extends IteratorIterator
 {
   /** @var bool */

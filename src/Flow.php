@@ -339,7 +339,7 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Transforms each input data item.
+   * Transforms the iterated data using a callback function.
    * @param callable $fn A callback that receives a value and a key and returns the new value.<br>
    *                     It can also receive the key by reference and change it.
    *                     <p>Ex:<code>  ->map (function ($v, &$k) { $k = $k * 10; return $v * 100; })</code>

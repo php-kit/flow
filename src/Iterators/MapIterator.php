@@ -3,7 +3,7 @@ namespace Flow\Iterators;
 use IteratorIterator;
 
 /**
- * Transforms the iterated data using a callback function.
+ * Transforms data from another iterator using a callback function.
  */
 class MapIterator extends IteratorIterator
 {

@@ -6,8 +6,7 @@ use OuterIterator;
 use Traversable;
 
 /**
- * An OuterIterator implementation that allows the caller to define an inner iterator to replace and expand each item
- * of the outer iterator.
+ * Replaces and expands each iterated value of another iterator.
  */
 class MacroIterator implements OuterIterator
 {
