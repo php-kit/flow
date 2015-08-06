@@ -2,7 +2,6 @@
 namespace Flow\Iterators;
 use Flow\Flow;
 use Iterator;
-use IteratorAggregate;
 use OuterIterator;
 use Traversable;
 
@@ -29,14 +28,14 @@ class MacroIterator implements OuterIterator
   private $outer;
 
   /**
-   * @param Traversable $outer The outer iterator.
-   * @param callable    $fn    A callback that receives the current outer iterator item's value and key and returns the
-   *                           corresponding inner Traversable or array.
-   * @param int         $flags Iterator One of the self::XXX constants.
+   * @param Traversable|array|callable $outer The outer iterator.
+   * @param callable                   $fn    A callback that receives the current outer iterator item's value and key
+   *                                          and returns the corresponding inner Traversable or array.
+   * @param int                        $flags Iterator One of the self::XXX constants.
    */
-  function __construct (Traversable $outer, callable $fn, $flags = 0)
+  function __construct ($outer, callable $fn, $flags = 0)
   {
-    $this->outer = $outer instanceof IteratorAggregate ? $outer->getIterator () : $outer;
+    $this->outer = Flow::iteratorFrom ($outer);
     $this->fn    = $fn;
     $this->flags = $flags;
   }
