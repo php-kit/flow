@@ -425,7 +425,7 @@ class Flow implements IteratorAggregate
         ? new UnfoldIterator(new MapIterator($v, $w, $d + 1))
         : $v;
     };
-    $this->map ($w, 0)->fold ();
+    $this->map ($w, 0)->unfold ();
     return $this;
   }
 
