@@ -426,6 +426,24 @@ class Flow implements IteratorAggregate
   }
 
   /**
+   * Wraps a recursive iterator over the current iterator.
+   * @param callable $fn A callback that receives the current node's value, key and nesting depth, and returns an
+   *                     iterable for the node's children or `null` if the node has no children.
+   * @return $this
+   */
+  function recursive2 (callable $fn)
+  {
+    $w = function ($v) use ($fn, &$w) {
+      $v = $fn ($v);
+      return is_traversable($v)
+        ? new UnfoldIterator(new MapIterator($v, $w))
+        : $v;
+    };
+    $this->map ($w)->fold();
+    return $this;
+  }
+
+  /**
    * Applies a function against an accumulator and each value of the iteration to reduce the iterated data to a single
    * value.
    * This iterator exposes an iteration with a single value: the final result of the reduction.
