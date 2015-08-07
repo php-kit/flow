@@ -413,8 +413,9 @@ class Flow implements IteratorAggregate
    * will not show up themselves on the final iteration (ex: on a filesystem iteration, directories themselves will not
    * be listed, only their contents, unless the mapper returns an iterable that also contains the directory).
    *
-   * @param callable $fn    A callback that receives the current value, key and nesting depth, and returns either the
-   *                        value itself or an iterable to replace that value with a sub-iteration.
+   * @param callable $fn A callback that receives the current value, key and nesting depth, and returns either the
+   *                     value itself or an iterable to replace that value with a sub-iteration.
+   *                     To suppress the value from the final iteration, return <kbd>NOIT()</kbd> (the empty iterator).
    * @return $this
    */
   function recursiveUnfold (callable $fn)

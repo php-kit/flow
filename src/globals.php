@@ -1,12 +1,27 @@
 <?php
+use Flow\Flow;
 use Flow\Iterators\FunctionIterator;
 use Flow\Iterators\SingleValueIterator;
 
-function is_traversable ($x) {
+/**
+ * Creates a Flow iteration from any value.
+ *
+ * If the value is not iterable, an iterator for a single value is returned.
+ * @param mixed $stuff Anything.
+ * @return Flow
+ */
+function flow ($stuff)
+{
+  return Flow::from ($stuff);
+}
+
+function is_traversable ($x)
+{
   return $x instanceof Traversable || is_array ($x);
 }
 
-function is_iterable ($x) {
+function is_iterable ($x)
+{
   return $x instanceof Traversable || is_array ($x) || is_callable ($x);
 }
 
@@ -31,3 +46,9 @@ function iterator ($t)
   }
 }
 
+function NOIT ()
+{
+  static $it;
+  if (!isset($it)) $it = new EmptyIterator;
+  return $it;
+}
