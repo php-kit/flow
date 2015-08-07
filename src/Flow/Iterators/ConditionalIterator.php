@@ -13,14 +13,11 @@ class ConditionalIterator extends IteratorIterator
   private $test;
 
   /**
-   * (PHP 5 &gt;= 5.1.0)<br/>
-   * Create an iterator from anything that is traversable
-   * @link http://php.net/manual/en/iteratoriterator.construct.php
-   * @param Traversable $iterator
-   * @param callable    $test A callback that receives the current iteration value and key, and returns a boolean.
-   *                          If it returns `true` the iteration continues, otherwise the iteration stops and no further
-   *                          calls to the callback will be mad until the iterator is rewound.
-   *                          <p>Note: the callback is only called while the inner iterator is valid.
+   * @param Traversable $iterator The source iterator.
+   * @param callable    $test     A callback that receives the current iteration value and key, and returns a boolean.
+   *                              If it returns `true` the iteration continues, otherwise the iteration stops and no
+   *                              further calls to the callback will be mad until the iterator is rewound.
+   *                              <p>Note: the callback is only called while the inner iterator is valid.
    */
   public function __construct (Traversable $iterator, callable $test)
   {

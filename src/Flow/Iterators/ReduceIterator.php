@@ -20,7 +20,7 @@ class ReduceIterator implements Iterator
   private $seed;
 
   /**
-   * @param Traversable $iterator
+   * @param Traversable $iterator  The source iterator.
    * @param callable    $fn        Callback to execute for each value of the iteration, taking 3 arguments:
    *                               <dl>
    *                               <dt>$previousValue<dd>The value previously returned in the last invocation of the

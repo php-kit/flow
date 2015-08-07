@@ -11,6 +11,11 @@ class FlipIterator extends IteratorIterator
   private $fk;
   private $fv;
 
+  /**
+   * @param Traversable $iterator   The source iterator.
+   * @param bool|true   $flipValues Output keys instead of values?
+   * @param bool|true   $flipKeys   Output values instead of keys?z
+   */
   public function __construct (Traversable $iterator, $flipValues = true, $flipKeys = true)
   {
     parent::__construct ($iterator);

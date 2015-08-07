@@ -66,6 +66,9 @@ Applies a function against an accumulator and each value from a given iterator t
 ##### ReindexIterator
 Iterates another iterator replacing keys by a generated sequence of numbers.
 
+##### SingleValueIterator
+Provides one single iteration of a constant value.
+
 ### Notes
 
 > Some operations require the iteration data to be "materialized", i.e. fully iterated and stored internally

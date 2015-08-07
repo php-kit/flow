@@ -7,7 +7,6 @@ use EmptyIterator;
 use Flow\Iterators\CachedIterator;
 use Flow\Iterators\ConditionalIterator;
 use Flow\Iterators\FlipIterator;
-use Flow\Iterators\FunctionIterator;
 use Flow\Iterators\LoopIterator;
 use Flow\Iterators\MapIterator;
 use Flow\Iterators\RangeIterator;
@@ -100,8 +99,8 @@ class Flow implements IteratorAggregate
   static function combine ($inputs, array $fields = null, $flags = 2)
   {
     $mul = new MultipleIterator($flags);
-    foreach (self::iteratorFrom ($inputs) as $k => $it)
-      $mul->attachIterator (self::iteratorFrom ($it), isset($fields) ? $fields[$k] : $k);
+    foreach (iterator ($inputs) as $k => $it)
+      $mul->attachIterator (iterator ($it), isset($fields) ? $fields[$k] : $k);
     return new static ($mul);
   }
 
@@ -112,27 +111,6 @@ class Flow implements IteratorAggregate
   static function from ($src)
   {
     return new static ($src);
-  }
-
-  /**
-   * Converts the argument into an iterator.
-   * @param mixed $t An iterable.
-   * @return Iterator
-   */
-  static function iteratorFrom ($t)
-  {
-    switch (true) {
-      case $t instanceof IteratorAggregate:
-        return $t->getIterator ();
-      case $t instanceof Iterator:
-        return $t;
-      case is_array ($t):
-        return new ArrayIterator ($t);
-      case is_callable ($t):
-        return new FunctionIterator ($t);
-      default:
-        throw new InvalidArgumentException ("Invalid iteration type.");
-    }
   }
 
   /**
@@ -156,8 +134,8 @@ class Flow implements IteratorAggregate
   static function sequence ($list)
   {
     $a = new AppendIterator;
-    foreach (self::iteratorFrom ($list) as $it)
-      $a->append (self::iteratorFrom ($it));
+    foreach (iterator ($list) as $it)
+      $a->append (iterator ($it));
     return new static ($a);
   }
 
@@ -192,8 +170,8 @@ class Flow implements IteratorAggregate
   {
     $a = new AppendIterator;
     $a->append ($this->getIterator ());
-    foreach (self::iteratorFrom ($list) as $it)
-      $a->append (self::iteratorFrom ($it));
+    foreach (iterator ($list) as $it)
+      $a->append (iterator ($it));
     $this->setIterator ($a);
     return $this;
   }
@@ -238,7 +216,7 @@ class Flow implements IteratorAggregate
   {
     $a = new AppendIterator;
     foreach ($this->getIterator () as $it)
-      $a->append (self::iteratorFrom ($it));
+      $a->append (iterator ($it));
     $this->setIterator ($a);
     return $this;
   }
@@ -346,28 +324,31 @@ class Flow implements IteratorAggregate
 
   /**
    * Transforms the iterated data using a callback function.
-   * @param callable $fn A callback that receives a value and a key and returns the new value.<br>
-   *                     It can also receive the key by reference and change it.
-   *                     <p>Ex:<code>  ->map (function ($v, &$k) { $k = $k * 10; return $v * 100; })</code>
+   * @param callable $fn  A callback that receives a value, a key and an option extra argument, and returns the new
+   *                      value.<br> It can also receive the key by reference and change it.
+   *                      <p>Ex:<code>  ->map (function ($v, &$k) { $k = $k * 10; return $v * 100; })</code>
+   * @param mixed    $arg An optional extra argument to be passed to the callback on every iteration.
+   *                      <p>The callback can change the argument if it declares the parameter as a reference.
    * @return $this
    */
-  function map (callable $fn)
+  function map (callable $fn, $arg = null)
   {
-    $this->setIterator (new MapIterator ($this->getIterator (), $fn));
+    $this->setIterator (new MapIterator ($this->getIterator (), $fn, $arg));
     return $this;
   }
 
   /**
    * Transforms each input data item, optionally filtering it out.
-   * @param callable $fn A callback that receives a value and key and returns a new value or `null` to discard it.<br>
-   *                     It can also receive the key by reference and change it.
-   *                     <p>Ex:<code>  ->mapAndFilter (function ($v, &$k) { $k = $k * 10; return $v > 5 ? $v * 100 :
-   *                     null; })</code>
+   * @param callable $fn  A callback that receives a value and key and returns a new value or `null` to discard it.<br>
+   *                      It can also receive the key by reference and change it.
+   *                      <p>Ex:<code>  ->mapAndFilter (function ($v,&$k) { $k=$k*10; return $v>5? $v*100:null;})</code>
+   * @param mixed    $arg An optional extra argument to be passed to the callback on every iteration.
+   *                      <p>The callback can change the argument if it declares the parameter as a reference.
    * @return $this
    */
-  function mapAndFilter (callable $fn)
+  function mapAndFilter (callable $fn, $arg = null)
   {
-    $this->setIterator (new CallbackFilterIterator (new MapIterator ($this->getIterator (), $fn), function ($v) {
+    $this->setIterator (new CallbackFilterIterator (new MapIterator ($this->getIterator (), $fn, $arg), function ($v) {
       return isset ($v);
     }));
     return $this;
@@ -426,20 +407,25 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Wraps a recursive iterator over the current iterator.
-   * @param callable $fn A callback that receives the current node's value, key and nesting depth, and returns an
-   *                     iterable for the node's children or `null` if the node has no children.
+   * Maps some or all iteration values to sub-iterations recursively and unfolds them into a single iteration.
+   *
+   * <p>This is an alternative way to recursively iterate nested structures. Note that values that map to iterables
+   * will not show up themselves on the final iteration (ex: on a filesystem iteration, directories themselves will not
+   * be listed, only their contents, unless the mapper returns an iterable that also contains the directory).
+   *
+   * @param callable $fn    A callback that receives the current value, key and nesting depth, and returns either the
+   *                        value itself or an iterable to replace that value with a sub-iteration.
    * @return $this
    */
-  function recursive2 (callable $fn)
+  function recursiveUnfold (callable $fn)
   {
-    $w = function ($v) use ($fn, &$w) {
-      $v = $fn ($v);
-      return is_traversable($v)
-        ? new UnfoldIterator(new MapIterator($v, $w))
+    $w = function ($v, $k, $d) use ($fn, &$w) {
+      $v = $fn ($v, $k, $d);
+      return is_traversable ($v)
+        ? new UnfoldIterator(new MapIterator($v, $w, $d + 1))
         : $v;
     };
-    $this->map ($w)->fold();
+    $this->map ($w, 0)->fold ();
     return $this;
   }
 
@@ -594,7 +580,7 @@ class Flow implements IteratorAggregate
    */
   function setIterator ($it)
   {
-    $this->it = self::iteratorFrom ($it);
+    $this->it = iterator ($it);
     return $this;
   }
 

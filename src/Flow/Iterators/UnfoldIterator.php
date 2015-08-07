@@ -34,7 +34,7 @@ class UnfoldIterator implements OuterIterator
    */
   function __construct ($iterator, $flags = 0)
   {
-    $this->inner = Flow::iteratorFrom ($iterator);
+    $this->inner = iterator ($iterator);
     $this->flags = $flags;
   }
 
@@ -85,8 +85,8 @@ class UnfoldIterator implements OuterIterator
   {
     while ($this->inner->valid ()) {
       $v = $this->inner->current ();
-      if ($v instanceof Traversable || is_array ($v)) {
-        $this->outer = Flow::iteratorFrom ($v);
+      if (is_iterable ($v)) {
+        $this->outer = iterator ($v);
         $this->outer->rewind ();
         if ($this->outer->valid ()) return;
         $this->inner->next ();
