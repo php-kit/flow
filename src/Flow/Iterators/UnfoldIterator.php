@@ -1,9 +1,7 @@
 <?php
-namespace Flow\Iterators;
-use Flow\Flow;
+namespace PhpKit\Flow\Iterators;
 use Iterator;
 use OuterIterator;
-use Traversable;
 
 /**
  * Replaces and expands each iterated value of another iterator.

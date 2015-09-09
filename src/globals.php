@@ -1,7 +1,7 @@
 <?php
-use Flow\Flow;
-use Flow\Iterators\FunctionIterator;
-use Flow\Iterators\SingleValueIterator;
+use PhpKit\Flow\Flow;
+use PhpKit\Flow\Iterators\FunctionIterator;
+use PhpKit\Flow\Iterators\SingleValueIterator;
 
 /**
  * Creates a Flow iteration from any value.

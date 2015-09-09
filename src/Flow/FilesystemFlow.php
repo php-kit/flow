@@ -1,5 +1,5 @@
 <?php
-namespace Flow;
+namespace PhpKit\Flow;
 use FilesystemIterator;
 use GlobIterator;
 use SplFileInfo;

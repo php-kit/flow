@@ -1,25 +1,25 @@
 <?php
-namespace Flow;
+namespace PhpKit\Flow;
 use AppendIterator;
 use ArrayIterator;
 use CallbackFilterIterator;
 use EmptyIterator;
-use Flow\Iterators\CachedIterator;
-use Flow\Iterators\ConditionalIterator;
-use Flow\Iterators\FlipIterator;
-use Flow\Iterators\LoopIterator;
-use Flow\Iterators\MapIterator;
-use Flow\Iterators\RangeIterator;
-use Flow\Iterators\RecursiveIterator;
-use Flow\Iterators\ReduceIterator;
-use Flow\Iterators\ReindexIterator;
-use Flow\Iterators\UnfoldIterator;
 use InvalidArgumentException;
 use Iterator;
 use IteratorAggregate;
 use LimitIterator;
 use MultipleIterator;
 use NoRewindIterator;
+use PhpKit\Flow\Iterators\CachedIterator;
+use PhpKit\Flow\Iterators\ConditionalIterator;
+use PhpKit\Flow\Iterators\FlipIterator;
+use PhpKit\Flow\Iterators\LoopIterator;
+use PhpKit\Flow\Iterators\MapIterator;
+use PhpKit\Flow\Iterators\RangeIterator;
+use PhpKit\Flow\Iterators\RecursiveIterator;
+use PhpKit\Flow\Iterators\ReduceIterator;
+use PhpKit\Flow\Iterators\ReindexIterator;
+use PhpKit\Flow\Iterators\UnfoldIterator;
 use RecursiveIteratorIterator;
 use RegexIterator;
 

@@ -1,5 +1,5 @@
 <?php
-namespace Flow\Iterators;
+namespace PhpKit\Flow\Iterators;
 use IteratorIterator;
 use RecursiveIterator as RecursiveIteratorInterface;
 use Traversable;

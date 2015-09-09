@@ -1,5 +1,5 @@
 {
-  "name": "impactwave/flow",
+  "name": "php-kit/flow",
   "license": "MIT",
   "description": "Iterator Nirvana for PHP",
   "keywords": [
@@ -7,7 +7,7 @@
     "generators",
     "fluent"
   ],
-  "homepage": "https://github.com/impactwave/flow",
+  "homepage": "https://github.com/php-kit/flow",
   "authors": [
     {
       "name": "Impactwave",
@@ -21,7 +21,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "Flow\\": "src/Flow"
+      "PhpKit\\Flow\\": "src/Flow"
     },
     "files": ["src/globals.php"]
   }
