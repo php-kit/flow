@@ -20,6 +20,7 @@ class ReindexIterator extends IteratorIterator
    */
   function __construct (Traversable $it, $from, $step = 1)
   {
+    parent::__construct ($it);
     $this->idx  = $this->from = $from;
     $this->step = $step;
   }
