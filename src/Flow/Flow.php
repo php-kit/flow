@@ -128,6 +128,15 @@ class Flow implements IteratorAggregate
 
   /**
    * Concatenates the specified iterables and iterates them in sequence.
+   *
+   * >**Caution**
+   *   <p><br>When using {@see iterator_to_array()} to copy the values of the resulting sequence into an array, you
+   *   have to set the optional `use_key` argument to `FALSE`.<br>
+   *   When `use_key` is not `FALSE` any keys reoccuring in inner iterators will get overwritten in the returned array.
+   *   <p><br>When using {@see Flow::all()} the same problem may occur.<br>
+   *   You can use {@see Flow::pack()} or {@see Flow::reindex()} instead, if you need a monotonically increasing
+   *   sequence of keys.
+   *
    * @param mixed $list A sequence of iterables.
    * @return static
    */
@@ -152,6 +161,7 @@ class Flow implements IteratorAggregate
    * Materializes the current iterator chain into an array.
    *
    * It preserves the original keys (unlike {@see Flow::pack()}).
+   * >Beware of issues with concatenated iterators that generate the same keys. See {@see append()}
    * @return array
    */
   function all ()
@@ -163,6 +173,15 @@ class Flow implements IteratorAggregate
 
   /**
    * Appends one or more iterators to the current one and sets a new iterator that iterates over all of them.
+   *
+   * >**Caution**
+   *   <p><br>When using {@see iterator_to_array()} to copy the values of the resulting sequence into an array, you
+   *   have to set the optional `use_key` argument to `FALSE`.<br>
+   *   When `use_key` is not `FALSE` any keys reoccuring in inner iterators will get overwritten in the returned array.
+   *   <p><br>When using {@see Flow::all()} the same problem may occur.<br>
+   *   You can use {@see Flow::pack()} or {@see Flow::reindex()} instead, if you need a monotonically increasing
+   *   sequence of keys.
+   *
    * @param mixed $list A sequence of iterables to append.
    * @return $this
    */
@@ -210,6 +229,15 @@ class Flow implements IteratorAggregate
   /**
    * Assumes the current iterator is composed of arrays or iterables and sets a new iterator that iterates over all of
    * them.
+   *
+   * >**Caution**
+   *   <p><br>When using {@see iterator_to_array()} to copy the values of the resulting sequence into an array, you
+   *   have to set the optional `use_key` argument to `FALSE`.<br>
+   *   When `use_key` is not `FALSE` any keys reoccuring in inner iterators will get overwritten in the returned array.
+   *   <p><br>When using {@see Flow::all()} the same problem may occur.<br>
+   *   You can use {@see Flow::pack()} or {@see Flow::reindex()} instead, if you need a monotonically increasing
+   *   sequence of keys.
+   *
    * @return $this
    */
   function concat ()
