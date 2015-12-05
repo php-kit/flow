@@ -25,6 +25,22 @@ function is_iterable ($x)
   return $x instanceof Traversable || is_array ($x) || is_callable ($x);
 }
 
+function iterable_to_array ($x, $use_keys = true)
+{
+  return iterator_to_array (iterator ($x), $use_keys);
+}
+
+/**
+ * Merges an iterable sequence to the target array, modifying the original.
+ * @param array $a
+ * @param mixed $it
+ * @param bool  $use_keys
+ */
+function array_mergeIterable (array &$a, $it, $use_keys = true)
+{
+  $a = array_merge ($a, iterable_to_array ($it, $use_keys));
+}
+
 /**
  * Converts the argument into an iterator.
  * @param mixed $t Any value type. If it is not iterable, an iterator for that single value is returned.

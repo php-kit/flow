@@ -174,8 +174,10 @@ class Flow implements IteratorAggregate
   /**
    * Appends one or more iterators to the current one and sets a new iterator that iterates over all of them.
    *
-   * >**Caution**
-   *   <p><br>When using {@see iterator_to_array()} to copy the values of the resulting sequence into an array, you
+   * <p>**Note:** an optimization is performed if the current iterator is already an {@see AppendIterator}.
+   *
+   * > ##### Caution
+   *   When using {@see iterator_to_array()} to copy the values of the resulting sequence into an array, you
    *   have to set the optional `use_key` argument to `FALSE`.<br>
    *   When `use_key` is not `FALSE` any keys reoccuring in inner iterators will get overwritten in the returned array.
    *   <p><br>When using {@see Flow::all()} the same problem may occur.<br>
@@ -187,11 +189,18 @@ class Flow implements IteratorAggregate
    */
   function append ($list)
   {
-    $a = new AppendIterator;
-    $a->append ($this->getIterator ());
-    foreach (iterator ($list) as $it)
-      $a->append (iterator ($it));
-    $this->setIterator ($a);
+    $cur = $this->getIterator ();
+    if ($cur instanceof AppendIterator) {
+      foreach (iterator ($list) as $it)
+        $cur->append (iterator ($it));
+    }
+    else {
+      $a = new AppendIterator;
+      $a->append ($cur);
+      foreach (iterator ($list) as $it)
+        $a->append (iterator ($it));
+      $this->setIterator ($a);
+    }
     return $this;
   }
 
