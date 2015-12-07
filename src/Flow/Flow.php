@@ -343,7 +343,7 @@ class Flow implements IteratorAggregate
   public function getIterator ()
   {
     if (isset ($this->data)) {
-      $this->setIterator (new ArrayIterator ($this->data));
+      $this->it = new ArrayIterator ($this->data);
       unset ($this->data);
     }
     return $this->it;

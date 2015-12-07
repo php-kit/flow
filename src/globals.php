@@ -50,7 +50,7 @@ function iterator ($t)
 {
   switch (true) {
     case $t instanceof IteratorAggregate:
-      return $t->getIterator ();
+      return iterator ($t->getIterator ());
     case $t instanceof Iterator:
       return $t;
     case is_array ($t):
