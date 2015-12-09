@@ -16,10 +16,10 @@ class RecursiveIterator extends IteratorIterator implements RecursiveIteratorInt
   /**
    * @param Traversable $iterator The source iterator.
    * @param callable    $fn       A callback that receives the current node's value, key and nesting depth, and returns
-   *                              an array or {@see Traversable} for the node's children or `null` if the node has no
-   *                              children.
-   * @param int         $depth    The initial/current nesting depth. You don't need to specify this argument, it will be
-   *                              automatically auto-incremented from 0.
+   *                              an array or {@see Traversable} for the node's children or `null` or an empty array if
+   *                              the node has no children.
+   * @param int         $depth    The initial/current nesting depth. You don't need to specify this argument, it will
+   *                              be automatically auto-incremented from 0.
    */
   public function __construct (Traversable $iterator, callable $fn, $depth = 0)
   {
@@ -37,7 +37,7 @@ class RecursiveIterator extends IteratorIterator implements RecursiveIteratorInt
   {
     $fn = $this->fn;
     $r  = $fn ($this->current (), $this->key (), $this->depth);
-    if (is_null ($r)) {
+    if (empty ($r)) {
       $this->children = null;
       return false;
     }

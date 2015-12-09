@@ -433,13 +433,17 @@ class Flow implements IteratorAggregate
 
   /**
    * Wraps a recursive iterator over the current iterator.
-   * @param callable $fn A callback that receives the current node's value, key and nesting depth, and returns an
-   *                     iterable for the node's children or `null` if the node has no children.
+   * @param callable $fn   A callback that receives the current node's value, key and nesting depth, and returns an
+   *                       iterable for the node's children or `null` if the node has no children.
+   * @param int      $mode One of the constants from RecursiveIteratorIterator:
+   *                       <p> 0 = LEAVES_ONLY
+   *                       <p> 1 = SELF_FIRST (default)
+   *                       <p> 2 = CHILD_FIRST
    * @return $this
    */
-  function recursive (callable $fn)
+  function recursive (callable $fn, $mode = RecursiveIteratorIterator::SELF_FIRST)
   {
-    $this->setIterator (new RecursiveIteratorIterator (new RecursiveIterator ($this->getIterator (), $fn)));
+    $this->setIterator (new RecursiveIteratorIterator (new RecursiveIterator ($this->getIterator (), $fn), $mode));
     return $this;
   }
 
