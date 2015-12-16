@@ -9,7 +9,7 @@ class FilesystemFlow extends Flow
   /**
    * Creates a filesystem directory query.
    * @param string $path  The directory path.
-   * @param int    $flags One of the FilesystemIterator::XXX flags.<br>
+   * @param int    $flags One of the {@see FilesystemIterator} flags.<br>
    *                      Default = KEY_AS_PATHNAME | CURRENT_AS_FILEINFO | SKIP_DOTS
    * @return static
    */
