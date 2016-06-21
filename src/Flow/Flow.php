@@ -65,6 +65,11 @@ class Flow implements IteratorAggregate
   ];
   /** @var array */
   private $data;
+  /**
+   * Used by `fetch()` and `fetchKey()`.
+   * @var bool
+   */
+  private $fetching;
   /** @var Iterator */
   private $it;
 
@@ -317,16 +322,44 @@ class Flow implements IteratorAggregate
    * Gets the current value from the composite iterator and iterates to the next.
    *
    * This is a shortcut way of reading one single data item from the iteration.
+   * It also takes care of rewinding the iterator when called for the first time.
    *
    * @return mixed|false `false` when the iteration is finished.
    */
-  function get ()
+  function fetch ()
   {
     $it = $this->getIterator ();
+    if (!$this->fetching) {
+      $this->fetching = true;
+      $it->rewind();
+    }
     if ($it->valid ()) {
       $v = $it->current ();
       $it->next ();
       return $v;
+    }
+    return false;
+  }
+
+  /**
+   * Gets the current key from the composite iterator and iterates to the next.
+   *
+   * This is a shortcut way of reading one single data item from the iteration.
+   * It also takes care of rewinding the iterator when called for the first time.
+   *
+   * @return mixed|false `false` when the iteration is finished.
+   */
+  function fetchKey ()
+  {
+    $it = $this->getIterator ();
+    if (!$this->fetching) {
+      $this->fetching = true;
+      $it->rewind();
+    }
+    if ($it->valid ()) {
+      $k = $it->key ();
+      $it->next ();
+      return $k;
     }
     return false;
   }
@@ -337,6 +370,7 @@ class Flow implements IteratorAggregate
    * <p>This allows instances of this class to be iterated (ex. on foreach loops).
    * <p>This is also used internally to make sure any array data stored internally is converted to an iterator before
    * being used.
+   * > <p>**WARNING:** don't forget to call `rewind()` before reading from the iterator.
    * @link http://php.net/manual/en/iteratoraggregate.getiterator.php
    * @return Iterator
    */
