@@ -1,5 +1,6 @@
 <?php
 namespace PhpKit\Flow;
+
 use AppendIterator;
 use ArrayIterator;
 use CallbackFilterIterator;
@@ -44,8 +45,7 @@ use RegexIterator;
  * <p>Note: Some operations require the iteration data to be "materialized", i.e. fully iterated and stored internally
  * as an array, before the operation is applied. This only happens for operations that require all data to be present
  * (ex: `reverse()` or `sort()`), and the resulting data will be automatically converted back to an iterator whenever
- * it
- * makes sense.
+ * it makes sense.
  */
 class Flow implements IteratorAggregate
 {
@@ -67,6 +67,7 @@ class Flow implements IteratorAggregate
   private $data;
   /**
    * Used by `fetch()` and `fetchKey()`.
+   *
    * @var bool
    */
   private $fetching;
@@ -75,6 +76,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Sets the initial data/iterator.
+   *
    * @param mixed $src An iterable,
    */
   function __construct ($src = [])
@@ -120,6 +122,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Creates an iteration over a generated sequence of numbers.
+   *
    * @param int|float $from Starting value.
    * @param int|float $to   The (inclusive) limit. May be lower than `$from` if the `$step` is negative.
    * @param int|float $step Can be either positive or negative. If zero, an infinite sequence of constant values is
@@ -155,6 +158,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Creates an empty iteration.
+   *
    * @return static
    */
   static function void ()
@@ -167,6 +171,7 @@ class Flow implements IteratorAggregate
    *
    * It preserves the original keys (unlike {@see Flow::pack()}).
    * >Beware of issues with concatenated iterators that generate the same keys. See {@see append()}
+   *
    * @return array
    */
   function all ()
@@ -216,6 +221,7 @@ class Flow implements IteratorAggregate
    * ```
    *   Query::range (1,10)->apply ('RegexIterator', '/^1/')->all ()
    * ```
+   *
    * @param string $traversableClass The name of a {@see Traversable} class whose constructor receives an
    *                                 iterator as a first argument.
    * @param mixed  ...$args          Additional arguments for the external iterator's constructor.
@@ -232,6 +238,7 @@ class Flow implements IteratorAggregate
 
   /**
    * *Memoize* the current iterator's values so that subsequent iterations will not need to iterate it again.
+   *
    * @return $this
    */
   function cache ()
@@ -267,6 +274,7 @@ class Flow implements IteratorAggregate
    * Drops the last `$n` elements from the iteration.
    *
    * Note: this also materializes the data and reindexes it.
+   *
    * @param int $n
    * @return $this
    */
@@ -279,6 +287,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Calls a function for every element in the iterator.
+   *
    * @param callable $fn A callback that receives the current value and key; it can, optionally, return `false` to break
    *                     the loop.
    * @return $this
@@ -309,16 +318,6 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Swaps values for the corresponding keys.
-   * @return $this
-   */
-  function flip ()
-  {
-    $this->setIterator (new FlipIterator ($this->getIterator ()));
-    return $this;
-  }
-
-  /**
    * Gets the current value from the composite iterator and iterates to the next.
    *
    * This is a shortcut way of reading one single data item from the iteration.
@@ -331,7 +330,7 @@ class Flow implements IteratorAggregate
     $it = $this->getIterator ();
     if (!$this->fetching) {
       $this->fetching = true;
-      $it->rewind();
+      $it->rewind ();
     }
     if ($it->valid ()) {
       $v = $it->current ();
@@ -354,7 +353,7 @@ class Flow implements IteratorAggregate
     $it = $this->getIterator ();
     if (!$this->fetching) {
       $this->fetching = true;
-      $it->rewind();
+      $it->rewind ();
     }
     if ($it->valid ()) {
       $k = $it->key ();
@@ -365,12 +364,24 @@ class Flow implements IteratorAggregate
   }
 
   /**
+   * Swaps values for the corresponding keys.
+   *
+   * @return $this
+   */
+  function flip ()
+  {
+    $this->setIterator (new FlipIterator ($this->getIterator ()));
+    return $this;
+  }
+
+  /**
    * (PHP 5 &gt;= 5.0.0)<br/>
    * Retrieves an external iterator.
    * <p>This allows instances of this class to be iterated (ex. on foreach loops).
    * <p>This is also used internally to make sure any array data stored internally is converted to an iterator before
    * being used.
    * > <p>**WARNING:** don't forget to call `rewind()` before reading from the iterator.
+   *
    * @link http://php.net/manual/en/iteratoraggregate.getiterator.php
    * @return Iterator
    */
@@ -385,6 +396,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Replaces values by the corresponding keys and sets the keys to increasing integer indexes starting from 0.
+   *
    * @return $this
    */
   function keys ()
@@ -395,6 +407,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Transforms the iterated data using a callback function.
+   *
    * @param callable $fn  A callback that receives a value, a key and an option extra argument, and returns the new
    *                      value.<br> It can also receive the key by reference and change it.
    *                      <p>Ex:<code>  ->map (function ($v, &$k) { $k = $k * 10; return $v * 100; })</code>
@@ -410,6 +423,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Transforms each input data item, optionally filtering it out.
+   *
    * @param callable $fn  A callback that receives a value and key and returns a new value or `null` to discard it.<br>
    *                      It can also receive the key by reference and change it.
    *                      <p>Ex:<code>  ->mapAndFilter (function ($v,&$k) { $k=$k*10; return $v>5? $v*100:null;})</code>
@@ -427,6 +441,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Makes the iteration non-rewindable.
+   *
    * @return $this
    */
   function noRewind ()
@@ -440,6 +455,7 @@ class Flow implements IteratorAggregate
    * <p>If `$n >` iterator count or `$n < 0`, this will have no effect.
    *
    * Note: this method is not equivalent to `limit (0, $n)`, for it can handle any kind of keys.
+   *
    * @param int $n How many iterations, at most.
    * @return $this
    */
@@ -457,6 +473,7 @@ class Flow implements IteratorAggregate
    *
    * This is faster than {@see reindex()} bit it materializes the data. This should usually be the last
    * operation to perform before retrieving the results.
+   *
    * @return $this
    */
   function pack ()
@@ -467,6 +484,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Wraps a recursive iterator over the current iterator.
+   *
    * @param callable $fn   A callback that receives the current node's value, key and nesting depth, and returns an
    *                       iterable for the node's children or `null` if the node has no children.
    * @param int      $mode One of the constants from RecursiveIteratorIterator:
@@ -509,6 +527,7 @@ class Flow implements IteratorAggregate
    * Applies a function against an accumulator and each value of the iteration to reduce the iterated data to a single
    * value.
    * This iterator exposes an iteration with a single value: the final result of the reduction.
+   *
    * @param callable $fn        Callback to execute for each value of the iteration, taking 3 arguments:
    *                            <dl>
    *                            <dt>$previousValue<dd>The value previously returned in the last invocation of the
@@ -527,6 +546,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Transforms data into arrays of regular expression matches for each item.
+   *
    * @param string $regexp     The regular expression to match.
    * @param int    $preg_flags The regular expression flags. Can be a combination of: PREG_PATTERN_ORDER,
    *                           PREG_SET_ORDER, PREG_OFFSET_CAPTURE.
@@ -545,6 +565,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Transforms data by extracting the first regular expression match for each item.
+   *
    * @param string $regexp     The regular expression to match.
    * @param int    $preg_flags The regular expression flags. Can be 0 or PREG_OFFSET_CAPTURE.
    * @param bool   $useKeys    When `true`, the iterated keys will be used instead of the corresponding values.
@@ -562,6 +583,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Transforms each string data item into another using a regular expression.
+   *
    * @param string $regexp      The regular expression to match.
    * @param string $replaceWith Literal content with $N placeholders, where N is the capture group index.
    * @param bool   $useKeys     When `true`, the iterated keys will be used instead of the corresponding values.
@@ -578,6 +600,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Splits each data item into arrays of strings using a regular expression.
+   *
    * @param string $regexp     The regular expression to match.
    * @param int    $preg_flags The regular expression flags. Can be a combination of: PREG_SPLIT_NO_EMPTY,
    *                           PREG_SPLIT_DELIM_CAPTURE, PREG_SPLIT_OFFSET_CAPTURE.
@@ -595,6 +618,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Reindexes the current data into a series of sequential integer values, starting from the specified value,
+   *
    * @param int $i  The new starting value for the keys sequence.
    * @param int $st The incremental step.
    * @return $this
@@ -609,6 +633,7 @@ class Flow implements IteratorAggregate
    * Repeats the iteration `$n` items.
    *
    * <p>Note: 0 = no iteration, &lt; 0 = infinite
+   *
    * @param int             $n
    * @return $this
    * @property LoopIterator $it
@@ -622,6 +647,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Repeats the iteration until the callback returns `false`.
+   *
    * @param callable $fn A callback that receives the current iteration value and key, and returns a boolean.
    * @return $this
    */
@@ -636,6 +662,7 @@ class Flow implements IteratorAggregate
    * Reverses the order of iteration.
    *
    * Note: this method materializes the data.
+   *
    * @param bool $preserveKeys If set to `true` numeric keys are preserved. Non-numeric keys are not affected by this
    *                           setting and will always be preserved.
    * @return $this
@@ -643,7 +670,8 @@ class Flow implements IteratorAggregate
   function reverse ($preserveKeys = false)
   {
     $this->pack ();
-    $this->data = array_reverse ($this->data, $preserveKeys);
+    $this->it = $this->array_reverse_iterator ($this->data, $preserveKeys);
+    unset ($this->data);
     return $this;
   }
 
@@ -651,6 +679,7 @@ class Flow implements IteratorAggregate
    * Sets the internal iterator.
    *
    * Not recommended for external use. This is used internally to update the first iterator on the chain.
+   *
    * @param mixed $it An iterable.
    * @return $this
    */
@@ -662,6 +691,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Skips the first `$n` elements from the iteration.
+   *
    * @param int $n
    * @return $this
    */
@@ -672,6 +702,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Limits iteration to the specified range.
+   *
    * @param int $offset Starts at 0.
    * @param int $count  -1 = all.
    * @return $this
@@ -686,6 +717,7 @@ class Flow implements IteratorAggregate
    * Sorts the data by its keys.
    *
    * Note: this method materializes the data.
+   *
    * @param string   $type  The type of sort to perform.<br>
    *                        One of:
    *                        'asort' | 'arsort' | 'krsort' | 'ksort' | 'natcasesort' | 'natsort' | 'rsort' | 'shuffle' |
@@ -716,6 +748,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Replaces the current data set by another.
+   *
    * @param callable $fn A callback that receives as argument an array of the current data and returns the
    *                     new data array.
    * @return $this
@@ -733,6 +766,7 @@ class Flow implements IteratorAggregate
    * <p>Each iterable value (a value that is, itself, an iterable) generated by the previous iterator will also be
    * iterated as part of the current iteration.
    * <p>Iterable values are unfolded as they are reached. Non-iterable values are iterated as usual.
+   *
    * @return $this
    */
   function unfold ()
@@ -743,6 +777,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Filters data by a condition.
+   *
    * @param callable $fn A callback that receives the element and its key and returns `true` for the elements that
    *                     should be kept.
    * @return $this
@@ -755,6 +790,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Filters data using a regular expression test.
+   *
    * @param string $regexp     The regular expression to match.
    * @param int    $preg_flags The regular expression flags. Can be 0 or PREG_OFFSET_CAPTURE.
    * @param bool   $useKeys    When `true`, the iterated keys will be used instead of the corresponding values.
@@ -769,6 +805,7 @@ class Flow implements IteratorAggregate
 
   /**
    * Continues iterating until the iteration finishes or the callback returns `false` (whichever occurs first).
+   *
    * @param callable $fn A callback that receives the current iteration value and key, and returns a boolean.
    * @return $this
    */
@@ -776,6 +813,23 @@ class Flow implements IteratorAggregate
   {
     $this->setIterator ($it = new ConditionalIterator ($this->getIterator (), $fn));
     return $this;
+  }
+
+  /**
+   * Returns an iterator that iterates an array on reverse.
+   *
+   * @param array $a
+   * @param bool  $preserveKeys If set to `true` numeric keys are preserved. Non-numeric keys are not affected by this
+   *                            setting and will always be preserved.
+   * @return \Generator
+   */
+  private function array_reverse_iterator (array $a, $preserveKeys = false)
+  {
+    if ($preserveKeys)
+      for (end ($a); ($key = key ($a)) !== null; prev ($a))
+        yield $key => current ($a);
+    else for (end ($a); ($key = key ($a)) !== null; prev ($a))
+      yield current ($a);
   }
 
 }
