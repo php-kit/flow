@@ -47,7 +47,7 @@ use RegexIterator;
  * (ex: `reverse()` or `sort()`), and the resulting data will be automatically converted back to an iterator whenever
  * it makes sense.
  */
-class Flow implements IteratorAggregate
+class Flow implements IteratorAggregate, Iterator
 {
   private static $SORT_TYPES = [
     'asort'       => 2,
@@ -169,8 +169,9 @@ class Flow implements IteratorAggregate
   /**
    * Materializes the current iterator chain into an array.
    *
-   * It preserves the original keys (unlike {@see Flow::pack()}).
-   * >Beware of issues with concatenated iterators that generate the same keys. See {@see append()}
+   * <p>It preserves the original keys (unlike {@see Flow::pack()}).
+   *
+   * ><p>Beware of issues with concatenated iterators that generate the same keys. See {@see append()}
    *
    * @return array
    */
@@ -469,9 +470,11 @@ class Flow implements IteratorAggregate
   /**
    * Materializes and reindexes the current data into a series of sequential integer keys.
    *
-   * This is useful to extract the data as a linear array with no discontinuous keys.
+   * <p>Access {@see all()} on the result to get the resulting array.
    *
-   * This is faster than {@see reindex()} bit it materializes the data. This should usually be the last
+   * <p>This is useful to extract the data as a linear array with no discontinuous keys.
+   *
+   * ><p>This is faster than {@see reindex()} bit it materializes the data. This should usually be the last
    * operation to perform before retrieving the results.
    *
    * @return $this
@@ -617,7 +620,7 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Reindexes the current data into a series of sequential integer values, starting from the specified value,
+   * Reindexes the current data into a series of sequential integer values, starting from the specified value.
    *
    * @param int $i  The new starting value for the keys sequence.
    * @param int $st The incremental step.
@@ -630,7 +633,7 @@ class Flow implements IteratorAggregate
   }
 
   /**
-   * Repeats the iteration `$n` items.
+   * Repeats the iteration `$n` times.
    *
    * <p>Note: 0 = no iteration, &lt; 0 = infinite
    *
@@ -830,6 +833,31 @@ class Flow implements IteratorAggregate
         yield $key => current ($a);
     else for (end ($a); ($key = key ($a)) !== null; prev ($a))
       yield current ($a);
+  }
+
+  public function current ()
+  {
+    return $this->it->current ();
+  }
+
+  public function next ()
+  {
+    $this->it->next ();
+  }
+
+  public function key ()
+  {
+    return $this->it->key ();
+  }
+
+  public function valid ()
+  {
+    return $this->it->valid ();
+  }
+
+  public function rewind ()
+  {
+    $this->it->rewind ();
   }
 
 }

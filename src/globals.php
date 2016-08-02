@@ -1,7 +1,6 @@
 <?php
 use PhpKit\Flow\Flow;
 use PhpKit\Flow\Iterators\FunctionIterator;
-use PhpKit\Flow\Iterators\SingleValueIterator;
 
 /**
  * Creates a Flow iteration from any value.
@@ -42,24 +41,24 @@ function array_mergeIterable (array &$a, $it, $use_keys = true)
 }
 
 /**
- * Converts the argument into an iterator.
- * @param mixed $t Any value type. If it is not iterable, an iterator for that single value is returned.
+ * Converts the argument into an iterator, even if it is not iterable.
+ *
+ * @param mixed $t Any value type. If it is not iterable, an empty iterator is returned.
  * @return Iterator
  */
 function iterator ($t)
 {
-  switch (true) {
-    case $t instanceof IteratorAggregate:
+  if (is_array ($t))
+    return new ArrayIterator ($t);
+  if (is_object ($t)) {
+    if ($t instanceof IteratorAggregate)
       return iterator ($t->getIterator ());
-    case $t instanceof Iterator:
+    if ($t instanceof Iterator)
       return $t;
-    case is_array ($t):
-      return new ArrayIterator ($t);
-    case is_callable ($t):
+    if (is_callable ($t))
       return new FunctionIterator ($t);
-    default:
-      return new SingleValueIterator ($t);
   }
+  return NOIT ();
 }
 
 function NOIT ()
