@@ -47,7 +47,7 @@ use RegexIterator;
  * (ex: `reverse()` or `sort()`), and the resulting data will be automatically converted back to an iterator whenever
  * it makes sense.
  */
-class Flow implements IteratorAggregate, Iterator
+class Flow implements Iterator
 {
   private static $SORT_TYPES = [
     'asort'       => 2,
