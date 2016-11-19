@@ -518,7 +518,7 @@ class Flow implements Iterator
   {
     $w = function ($v, $k, $d) use ($fn, &$w) {
       $v = $fn ($v, $k, $d);
-      return is_traversable ($v)
+      return is_iterableEx ($v)
         ? new UnfoldIterator(new MapIterator($v, $w, $d + 1))
         : $v;
     };

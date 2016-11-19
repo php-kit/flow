@@ -6,6 +6,7 @@ use PhpKit\Flow\Iterators\FunctionIterator;
  * Creates a Flow iteration from any value.
  *
  * If the value is not iterable, an iterator for a single value is returned.
+ *
  * @param mixed $stuff Anything.
  * @return Flow
  */
@@ -14,12 +15,26 @@ function flow ($stuff)
   return Flow::from ($stuff);
 }
 
-function is_traversable ($x)
-{
-  return $x instanceof Traversable || is_array ($x);
+if (!function_exists ('is_iterable')) {
+  /**
+   * Detects if the argument is traversable using `foreach`.
+   *
+   * @param $x
+   * @return bool
+   */
+  function is_iterable ($x)
+  {
+    return $x instanceof Traversable || is_array ($x);
+  }
 }
 
-function is_iterable ($x)
+/**
+ * Similar to {@see is_iterable} but it also considers callables to be iterable (via {@see FunctionIterator}).
+ *
+ * @param mixed $x
+ * @return bool
+ */
+function is_iterableEx ($x)
 {
   return $x instanceof Traversable || is_array ($x) || is_callable ($x);
 }
@@ -31,6 +46,7 @@ function iterable_to_array ($x, $use_keys = true)
 
 /**
  * Merges an iterable sequence to the target array, modifying the original.
+ *
  * @param array $a
  * @param mixed $it
  * @param bool  $use_keys
@@ -55,9 +71,9 @@ function iterator ($t)
       return iterator ($t->getIterator ());
     if ($t instanceof Iterator)
       return $t;
-    if (is_callable ($t))
-      return new FunctionIterator ($t);
   }
+  if (is_callable ($t))
+    return new FunctionIterator ($t);
   return NOIT ();
 }
 
