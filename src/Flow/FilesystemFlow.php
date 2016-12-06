@@ -1,5 +1,6 @@
 <?php
 namespace PhpKit\Flow;
+
 use FilesystemIterator;
 use GlobIterator;
 use SplFileInfo;
@@ -8,6 +9,7 @@ class FilesystemFlow extends Flow
 {
   /**
    * Creates a filesystem directory query.
+   *
    * @param string $path  The directory path.
    * @param int    $flags One of the {@see FilesystemIterator} flags.<br>
    *                      Default = KEY_AS_PATHNAME | CURRENT_AS_FILEINFO | SKIP_DOTS
@@ -15,11 +17,18 @@ class FilesystemFlow extends Flow
    */
   static function from ($path, $flags = 4096)
   {
-    return new static (new FilesystemIterator($path, $flags));
+    try {
+      return new static (new FilesystemIterator($path, $flags));
+    }
+    catch (\Exception $e) {
+      // Convert UnexpectedValueException to another type to prevent problems with some error handlers.
+      throw new \InvalidArgumentException($e->getMessage ());
+    }
   }
 
   /**
    * Iterates through a file system in a similar fashion to {@see glob()}.
+   *
    * @param string $path  The directory path and pattern. No tilde expansion or parameter substitution is done.
    * @param int    $flags One of the FilesystemIterator::XXX flags.<br>
    *                      Default = KEY_AS_PATHNAME | CURRENT_AS_FILEINFO
