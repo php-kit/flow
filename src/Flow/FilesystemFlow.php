@@ -41,12 +41,20 @@ class FilesystemFlow extends Flow
 
   function onlyDirectories ()
   {
-    return $this->where (function (SplFileInfo $f) { return $f->isDir (); });
+    return $this->where (function ($f) {
+      if (!is_object($f) || !$f instanceof SplFileInfo)
+        throw new \RuntimeException ("You can't use FilesystemIterator::CURRENT_AS_PATHNAME with onlyDirectories()");
+      return $f->isDir ();
+    });
   }
 
   function onlyFiles ()
   {
-    return $this->where (function (SplFileInfo $f) { return $f->isFile (); });
+    return $this->where (function ($f) {
+      if (!is_object($f) || !$f instanceof SplFileInfo)
+        throw new \RuntimeException ("You can't use FilesystemIterator::CURRENT_AS_PATHNAME with onlyFiles()");
+      return $f->isFile ();
+    });
   }
 
 }
