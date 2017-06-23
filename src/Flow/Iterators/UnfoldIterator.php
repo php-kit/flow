@@ -21,9 +21,9 @@ class UnfoldIterator implements OuterIterator
   private $flags;
   /** @var int */
   private $index;
-  /** @var Iterator */
+  /** @var Iterator The original iteration sequence */
   private $inner;
-  /** @var Iterator */
+  /** @var Iterator The iterator of each iterable item on the original iteration */
   private $outer;
 
   /**
