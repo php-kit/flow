@@ -324,7 +324,8 @@ class Flow implements Iterator
    */
   function expand (callable $fn, $keepOriginals = false)
   {
-    return ($keepOriginals ? $this->intercalate ($fn) : $this->map ($fn))->unfold ();
+    $keepOriginals ? $this->intercalate ($fn) : $this->map ($fn);
+    return $this->unfold ();
   }
 
   /**
