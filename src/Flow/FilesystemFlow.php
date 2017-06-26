@@ -7,6 +7,10 @@ use SplFileInfo;
 
 class FilesystemFlow extends Flow
 {
+  const DIRECTORIES_FIRST = 1;
+  const FILES_FIRST       = 2;
+  const FILES_ONLY        = 0;
+
   /**
    * Creates a filesystem directory query.
    *
@@ -40,21 +44,32 @@ class FilesystemFlow extends Flow
   }
 
   /**
-   * Creates a filesystem directory query.
+   * Creates a recursive filesystem directory query.
+   *
+   * <p>By default, the query returns all files and directories on the specified directory recursively for each
+   * subdirectory found.
+   *
+   * <p>Note: instead of setting the `$mode` argument, you may use instead the {@see onlyDirectories()} and
+   * {@see onlyFiles()} filters.
    *
    * @param string $path  The directory path.
    * @param int    $flags One of the {@see FilesystemIterator} flags.<br>
    *                      Default = KEY_AS_PATHNAME | CURRENT_AS_FILEINFO | SKIP_DOTS
+   * @param int    $mode  One of these constants from {@see FilesystemFlow}:
+   *                      <p> 0 = FILES_ONLY
+   *                      <p> 1 = DIRECTORIES_FIRST (default)
+   *                      <p> 2 = FILES_FIRST
+   *                      <p>Note: these constants mirror those from {@see RecursiveIteratorIterator}
    * @return static
    */
-  static function recursiveFrom ($path, $flags = 4096)
+  static function recursiveFrom ($path, $flags = 4096, $mode = self::DIRECTORIES_FIRST)
   {
     try {
-      return (new static (new FilesystemIterator($path, $flags)))->recursiveUnfold (function ($v, $k, $d) use ($flags) {
+      return (new static (new FilesystemIterator($path, $flags)))->recursive (function ($v, $k, $d) use ($flags) {
         $p = is_string ($v) ? $v : ($v instanceof SplFileInfo ? $v->getPathname () : $k);
-        $r = is_dir ($p) ? new FilesystemIterator ($p, $flags) : $v;
+        $r = is_dir ($p) ? new FilesystemIterator ($p, $flags) : null;
         return $r;
-      }, true);
+      }, $mode);
     }
     catch (\Exception $e) {
       // Convert UnexpectedValueException to another type to prevent problems with some error handlers.
@@ -82,6 +97,11 @@ class FilesystemFlow extends Flow
       }, false);
   }
 
+  /**
+   * Restricts the iteration to directories only.
+   *
+   * @return $this
+   */
   function onlyDirectories ()
   {
     return $this->where (function ($f) {
@@ -91,6 +111,11 @@ class FilesystemFlow extends Flow
     });
   }
 
+  /**
+   * Restricts the iteration to files only.
+   *
+   * @return $this
+   */
   function onlyFiles ()
   {
     return $this->where (function ($f) {
