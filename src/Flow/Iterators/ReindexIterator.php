@@ -25,19 +25,19 @@ class ReindexIterator extends IteratorIterator
     $this->step = $step;
   }
 
-  public function key ()
-  {
+  public function key(): mixed
+	{
     return $this->idx;
   }
 
-  public function next ()
-  {
+  public function next(): void
+	{
     parent::next ();
     $this->idx += $this->step;
   }
 
-  public function rewind ()
-  {
+  public function rewind(): void
+	{
     parent::rewind ();
     $this->idx = $this->from;
   }

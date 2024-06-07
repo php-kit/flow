@@ -23,13 +23,13 @@ class FlipIterator extends IteratorIterator
     $this->fk = $flipKeys;
   }
 
-  function current ()
-  {
+  function current(): mixed
+	{
     return $this->fv ? parent::key () : parent::current ();
   }
 
-  function key ()
-  {
+  function key(): mixed
+	{
     return $this->fk ? parent::current () : parent::key ();
   }
 

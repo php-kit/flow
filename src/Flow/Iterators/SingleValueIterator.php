@@ -1,5 +1,6 @@
 <?php
 namespace PhpKit\Flow\Iterators;
+
 use Iterator;
 
 /**
@@ -7,40 +8,41 @@ use Iterator;
  */
 class SingleValueIterator implements Iterator
 {
-  private $read;
-  private $v;
 
-  /**
-   * @param mixed $value Any type of value.
-   */
-  function __construct ($value)
-  {
-    $this->v = $value;
-  }
+	private $read;
+	private $v;
 
-  public function current ()
-  {
-    return $this->v;
-  }
+	/**
+	 * @param mixed $value Any type of value.
+	 */
+	function __construct($value)
+	{
+		$this->v = $value;
+	}
 
-  public function key ()
-  {
-    return $this->read ? 1 : 0;
-  }
+	public function current(): mixed
+	{
+		return $this->v;
+	}
 
-  public function next ()
-  {
-    $this->read = true;
-  }
+	public function key(): mixed
+	{
+		return $this->read ? 1 : 0;
+	}
 
-  public function rewind ()
-  {
-    $this->read = false;
-  }
+	public function next(): void
+	{
+		$this->read = true;
+	}
 
-  public function valid ()
-  {
-    return !$this->read;
-  }
+	public function rewind(): void
+	{
+		$this->read = false;
+	}
+
+	public function valid(): bool
+	{
+		return !$this->read;
+	}
 
 }

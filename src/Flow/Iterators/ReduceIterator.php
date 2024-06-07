@@ -1,5 +1,6 @@
 <?php
 namespace PhpKit\Flow\Iterators;
+
 use Iterator;
 use Traversable;
 
@@ -11,64 +12,67 @@ use Traversable;
  */
 class ReduceIterator implements Iterator
 {
-  /** @var callable */
-  private $fn;
-  private $idx;
-  /** @var Iterator */
-  private $it;
-  private $result;
-  private $seed;
 
-  /**
-   * @param Traversable $iterator  The source iterator.
-   * @param callable    $fn        Callback to execute for each value of the iteration, taking 3 arguments:
-   *                               <dl>
-   *                               <dt>$previousValue<dd>The value previously returned in the last invocation of the
-   *                               callback, or `$seedValue`, if supplied.
-   *                               <dt>$urrentValue <dd>The current element being iterated.
-   *                               <dt>$key <dd>The index/key of the current element being iterated.
-   *                               </dl>
-   * @param mixed       $seedValue Optional value to use as the first argument to the first call of the callback.
-   */
-  public function __construct (Traversable $iterator, callable $fn, $seedValue = null)
-  {
-    $this->it   = $iterator;
-    $this->fn   = $fn;
-    $this->seed = $seedValue;
-  }
+	/** @var callable */
+	private $fn;
+	private $idx;
 
-  public function current ()
-  {
-    return $this->result;
-  }
+	/** @var Iterator */
+	private $it;
+	private $result;
+	private $seed;
 
-  public function key ()
-  {
-    return $this->idx;
-  }
+	/**
+	 * @param Traversable $iterator  The source iterator.
+	 * @param callable    $fn        Callback to execute for each value of the iteration, taking 3 arguments:
+	 *                               <dl>
+	 *                               <dt>$previousValue<dd>The value previously returned in the last invocation of the
+	 *                               callback, or `$seedValue`, if supplied.
+	 *                               <dt>$urrentValue <dd>The current element being iterated.
+	 *                               <dt>$key <dd>The index/key of the current element being iterated.
+	 *                               </dl>
+	 * @param mixed       $seedValue Optional value to use as the first argument to the first call of the callback.
+	 */
+	public function __construct(Traversable $iterator, callable $fn, $seedValue = null)
+	{
+		$this->it = $iterator;
+		$this->fn = $fn;
+		$this->seed = $seedValue;
+	}
 
-  public function next ()
-  {
-    ++$this->idx;
-  }
+	public function current(): mixed
+	{
+		return $this->result;
+	}
 
-  public function rewind ()
-  {
-    $this->idx = 0;
-    $prev      = $this->seed;
-    $it        = $this->it;
-    $it->rewind ();
-    $fn = $this->fn;
-    while ($it->valid ()) {
-      $prev = $fn ($prev, $it->current (), $it->key ());
-      $it->next ();
-    }
-    $this->result = $prev;
-  }
+	public function key(): mixed
+	{
+		return $this->idx;
+	}
 
-  public function valid ()
-  {
-    return !$this->idx;
-  }
+	public function next(): void
+	{
+		++$this->idx;
+	}
+
+	public function rewind(): void
+	{
+		$this->idx = 0;
+		$prev = $this->seed;
+		$it = $this->it;
+		$it->rewind();
+		$fn = $this->fn;
+		while ($it->valid())
+		{
+			$prev = $fn($prev, $it->current(), $it->key());
+			$it->next();
+		}
+		$this->result = $prev;
+	}
+
+	public function valid(): bool
+	{
+		return !$this->idx;
+	}
 
 }

@@ -1,7 +1,10 @@
 <?php
 namespace PhpKit\Flow\Iterators;
+
 use Iterator;
 use OuterIterator;
+use function is_iterable;
+use function iterator;
 
 /**
  * Replaces and expands each iterated value of another iterator.
@@ -12,86 +15,95 @@ use OuterIterator;
  */
 class UnfoldIterator implements OuterIterator
 {
-  /**
-   * When this options is set, the resulting iteration preserves the original keys from each successive inner iterator.
-   * When not set, keys are auto-incremented integers starting at 0.
-   */
-  const USE_ORIGINAL_KEYS = 1;
-  /** @var int */
-  private $flags;
-  /** @var int */
-  private $index;
-  /** @var Iterator The original iteration sequence */
-  private $inner;
-  /** @var Iterator The iterator of each iterable item on the original iteration */
-  private $outer;
 
-  /**
-   * @param mixed $iterator An iterable.
-   * @param int   $flags    Iterator One of the self::XXX constants.
-   */
-  function __construct ($iterator, $flags = 0)
-  {
-    $this->inner = iterator ($iterator);
-    $this->flags = $flags;
-  }
+	/**
+	 * When this options is set, the resulting iteration preserves the original keys from each successive inner iterator.
+	 * When not set, keys are auto-incremented integers starting at 0.
+	 */
+	const USE_ORIGINAL_KEYS = 1;
 
-  function current ()
-  {
-    return isset($this->outer) ? $this->outer->current () : $this->inner->current ();
-  }
+	/** @var int */
+	private $flags;
 
-  function getInnerIterator ()
-  {
-    return $this->inner;
-  }
+	/** @var int */
+	private $index;
 
-  function key ()
-  {
-    return $this->flags & self::USE_ORIGINAL_KEYS
-      ? (isset($this->outer) ? $this->outer->key () : $this->inner->key ())
-      : $this->index;
-  }
+	/** @var Iterator The original iteration sequence */
+	private $inner;
 
-  function next ()
-  {
-    ++$this->index;
-    if (isset($this->outer)) {
-      $this->outer->next ();
-      if ($this->outer->valid ()) return;
-    }
-    $this->inner->next ();
-    $this->nextOuter ();
-  }
+	/** @var Iterator The iterator of each iterable item on the original iteration */
+	private $outer;
 
-  function rewind ()
-  {
-    $this->index = 0;
-    $this->inner->rewind ();
-    $this->nextOuter ();
-  }
+	/**
+	 * @param mixed $iterator An iterable.
+	 * @param int   $flags    Iterator One of the self::XXX constants.
+	 */
+	function __construct($iterator, $flags = 0)
+	{
+		$this->inner = iterator($iterator);
+		$this->flags = $flags;
+	}
 
-  function valid ()
-  {
-    return isset($this->outer) || $this->inner->valid ();
-  }
+	function current(): mixed
+	{
+		return isset($this->outer) ? $this->outer->current() : $this->inner->current();
+	}
 
-  /**
-   * Advance the inner iterator until we get a non-empty outer iterator.
-   */
-  function nextOuter ()
-  {
-    while ($this->inner->valid ()) {
-      $v = $this->inner->current ();
-      if (is_iterable ($v)) {
-        $this->outer = iterator ($v);
-        $this->outer->rewind ();
-        if ($this->outer->valid ()) return;
-        $this->inner->next ();
-      }
-      else break;
-    }
-    $this->outer = null;
-  }
+	function getInnerIterator(): \Iterator
+	{
+		return $this->inner;
+	}
+
+	function key(): mixed
+	{
+		return $this->flags & self::USE_ORIGINAL_KEYS ? (isset($this->outer) ? $this->outer->key() : $this->inner->key()) : $this->index;
+	}
+
+	function next(): void
+	{
+		++$this->index;
+		if (isset($this->outer))
+		{
+			$this->outer->next();
+			if ($this->outer->valid())
+				return;
+		}
+		$this->inner->next();
+		$this->nextOuter();
+	}
+
+	function rewind(): void
+	{
+		$this->index = 0;
+		$this->inner->rewind();
+		$this->nextOuter();
+	}
+
+	function valid(): bool
+	{
+		return isset($this->outer) || $this->inner->valid();
+	}
+
+	/**
+	 * Advance the inner iterator until we get a non-empty outer iterator.
+	 */
+	function nextOuter()
+	{
+		while ($this->inner->valid())
+		{
+			$v = $this->inner->current();
+			if (is_iterable($v))
+			{
+				$this->outer = iterator($v);
+				$this->outer->rewind();
+				if ($this->outer->valid())
+					return;
+				$this->inner->next();
+			}
+			else
+				break;
+		}
+		$this->outer = null;
+	}
 
 }

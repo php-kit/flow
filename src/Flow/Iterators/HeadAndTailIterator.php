@@ -8,56 +8,58 @@ use Iterator;
  */
 class HeadAndTailIterator implements Iterator
 {
-  private $head;
-  private $headKey;
-  private $idx = 0;
-  /**
-   * @var bool
-   */
-  private $keepTailKeys;
-  private $tail;
 
-  /**
-   * An iterator for a list comprised of a head value followed by a tail iteration that defines the remaining elements.
-   *
-   * @param mixed $head         The first value of the iteration.
-   * @param mixed $tail         An iterable sequence.
-   * @param mixed $headKey      The first key of the iteration.
-   * @param bool  $keepTailKeys TRUE to return the original tail keys, FALSE to reindex them.
-   */
-  function __construct ($head, $tail, $headKey = 0, $keepTailKeys = false)
-  {
-    $this->head         = $head;
-    $this->tail         = iterator ($tail);
-    $this->headKey = $headKey;
-    $this->keepTailKeys = $keepTailKeys;
-  }
+	private $head;
+	private $headKey;
+	private $idx = 0;
 
-  public function current ()
-  {
-    return $this->idx ? $this->tail->current () : $this->head;
-  }
+	/**
+	 * @var bool
+	 */
+	private $keepTailKeys;
+	private $tail;
 
-  public function key ()
-  {
-    return $this->idx ? ($this->keepTailKeys ? $this->tail->key () : $this->idx) : $this->headKey;
-  }
+	/**
+	 * An iterator for a list comprised of a head value followed by a tail iteration that defines the remaining elements.
+	 *
+	 * @param mixed $head         The first value of the iteration.
+	 * @param mixed $tail         An iterable sequence.
+	 * @param mixed $headKey      The first key of the iteration.
+	 * @param bool  $keepTailKeys TRUE to return the original tail keys, FALSE to reindex them.
+	 */
+	function __construct($head, $tail, $headKey = 0, $keepTailKeys = false)
+	{
+		$this->head = $head;
+		$this->tail = iterator($tail);
+		$this->headKey = $headKey;
+		$this->keepTailKeys = $keepTailKeys;
+	}
 
-  public function next ()
-  {
-    if (++$this->idx > 1)
-      $this->tail->next ();
-  }
+	public function current(): mixed
+	{
+		return $this->idx ? $this->tail->current() : $this->head;
+	}
 
-  public function rewind ()
-  {
-    $this->idx = 0;
-    $this->tail->rewind ();
-  }
+	public function key(): mixed
+	{
+		return $this->idx ? ($this->keepTailKeys ? $this->tail->key() : $this->idx) : $this->headKey;
+	}
 
-  public function valid ()
-  {
-    return !$this->idx || $this->tail->valid ();
-  }
+	public function next(): void
+	{
+		if (++$this->idx > 1)
+			$this->tail->next();
+	}
+
+	public function rewind(): void
+	{
+		$this->idx = 0;
+		$this->tail->rewind();
+	}
+
+	public function valid(): bool
+	{
+		return !$this->idx || $this->tail->valid();
+	}
 
 }
