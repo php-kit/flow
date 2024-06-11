@@ -28,13 +28,13 @@ class RecursiveIterator extends IteratorIterator implements RecursiveIteratorInt
     $this->depth = $depth;
   }
 
-  public function getChildren ()
-  {
+  public function getChildren(): RecursiveIterator
+	{
     return $this->children;
   }
 
-  public function hasChildren ()
-  {
+  public function hasChildren(): bool
+	{
     $fn = $this->fn;
     $r  = $fn ($this->current (), $this->key (), $this->depth);
     if (empty ($r)) {
