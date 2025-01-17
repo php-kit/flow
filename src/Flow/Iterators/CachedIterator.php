@@ -1,4 +1,5 @@
 <?php
+
 namespace PhpKit\Flow\Iterators;
 
 use ArrayIterator;
@@ -24,7 +25,7 @@ class CachedIterator extends IteratorIterator
 		return $this->cached ? $this->it->current() : ($this->data[] = parent::current());
 	}
 
-	public function getInnerIterator()
+	public function getInnerIterator(): ?\Iterator
 	{
 		return $this->cached ? $this->it : parent::getInnerIterator();
 	}
@@ -66,5 +67,4 @@ class CachedIterator extends IteratorIterator
 	{
 		return $this->cached ? $this->it->valid() : parent::valid();
 	}
-
 }
