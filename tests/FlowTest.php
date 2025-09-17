@@ -572,6 +572,13 @@ $tests->it('flow() wraps values into Flow instances', function () use ($tests): 
     $tests->same([], flow('scalar')->all());
 });
 
+$tests->it('is_iterable is always available and matches PHP semantics', function () use ($tests): void {
+    $tests->truthy(function_exists('is_iterable'));
+    $tests->truthy(is_iterable([1, 2, 3]));
+    $tests->truthy(is_iterable(new ArrayIterator([4, 5])));
+    $tests->truthy(!is_iterable(42));
+});
+
 $tests->it('is_iterableEx recognises arrays, Traversables, and callables', function () use ($tests): void {
     $tests->truthy(is_iterableEx([1]));
     $tests->truthy(is_iterableEx(new ArrayIterator()));
@@ -627,6 +634,155 @@ $tests->it('NOIT() returns a reusable empty iterator', function () use ($tests):
     $tests->same($first, $second);
 });
 
+$tests->it('Flow exposes the expected public API surface', function () use ($tests): void {
+    $reflection = new ReflectionClass(Flow::class);
+    $methods = array_map(
+        static fn (ReflectionMethod $method): string => $method->getName(),
+        array_filter(
+            $reflection->getMethods(ReflectionMethod::IS_PUBLIC),
+            static fn (ReflectionMethod $method): bool => $method->getDeclaringClass()->getName() === Flow::class
+        )
+    );
+    sort($methods);
+
+    $expected = [
+        '__construct',
+        'all',
+        'append',
+        'apply',
+        'cache',
+        'combine',
+        'concat',
+        'current',
+        'drop',
+        'each',
+        'expand',
+        'fetch',
+        'fetchKey',
+        'flip',
+        'from',
+        'getIterator',
+        'intercalate',
+        'key',
+        'keys',
+        'map',
+        'mapAndFilter',
+        'next',
+        'noRewind',
+        'only',
+        'pack',
+        'prepend',
+        'prependValue',
+        'range',
+        'recursive',
+        'recursiveUnfold',
+        'reduce',
+        'regex',
+        'regexExtract',
+        'regexMap',
+        'regexSplit',
+        'reindex',
+        'repeat',
+        'repeatWhile',
+        'reverse',
+        'rewind',
+        'sequence',
+        'setIterator',
+        'skip',
+        'slice',
+        'sort',
+        'swap',
+        'unfold',
+        'valid',
+        'void',
+        'where',
+        'whereMatch',
+        'while_',
+    ];
+    sort($expected);
+
+    $tests->same($expected, $methods);
+});
+
+$tests->it('FilesystemFlow regression guards track every public method', function () use ($tests): void {
+    $reflection = new ReflectionClass(FilesystemFlow::class);
+    $methods = array_map(
+        static fn (ReflectionMethod $method): string => $method->getName(),
+        array_filter(
+            $reflection->getMethods(ReflectionMethod::IS_PUBLIC),
+            static fn (ReflectionMethod $method): bool => $method->getDeclaringClass()->getName() === FilesystemFlow::class
+        )
+    );
+    sort($methods);
+
+    $expected = ['from', 'glob', 'onlyDirectories', 'onlyFiles', 'recursiveFrom', 'recursiveGlob'];
+    sort($expected);
+
+    $tests->same($expected, $methods);
+});
+
+$tests->it('Iterator helper coverage stays in sync with the source tree', function () use ($tests): void {
+    $expectedClasses = [
+        CachedIterator::class,
+        ConditionalIterator::class,
+        FlipIterator::class,
+        FunctionIterator::class,
+        HeadAndTailIterator::class,
+        LoopIterator::class,
+        MapIterator::class,
+        RangeIterator::class,
+        FlowRecursiveIterator::class,
+        ReduceIterator::class,
+        ReindexIterator::class,
+        SingleValueIterator::class,
+        UnfoldIterator::class,
+    ];
+    $discovered = [];
+    foreach (glob(__DIR__ . '/../src/Flow/Iterators/*.php') as $file) {
+        $discovered[] = 'PhpKit\\Flow\\Iterators\\' . basename($file, '.php');
+    }
+    sort($expectedClasses);
+    sort($discovered);
+    $tests->same($expectedClasses, $discovered);
+
+    $methodExpectations = [
+        CachedIterator::class => ['current', 'getInnerIterator', 'key', 'next', 'rewind', 'valid'],
+        ConditionalIterator::class => ['__construct', 'valid'],
+        FlipIterator::class => ['__construct', 'current', 'key'],
+        FunctionIterator::class => ['__construct', 'current', 'key', 'next', 'rewind', 'valid'],
+        HeadAndTailIterator::class => ['__construct', 'current', 'key', 'next', 'rewind', 'valid'],
+        LoopIterator::class => ['limit', 'next', 'repeat', 'test', 'valid'],
+        MapIterator::class => ['__construct', 'current', 'key', 'valid'],
+        RangeIterator::class => ['__construct', 'current', 'key', 'next', 'rewind', 'valid'],
+        FlowRecursiveIterator::class => ['__construct', 'getChildren', 'hasChildren'],
+        ReduceIterator::class => ['__construct', 'current', 'key', 'next', 'rewind', 'valid'],
+        ReindexIterator::class => ['__construct', 'key', 'next', 'rewind'],
+        SingleValueIterator::class => ['__construct', 'current', 'key', 'next', 'rewind', 'valid'],
+        UnfoldIterator::class => ['__construct', 'current', 'getInnerIterator', 'key', 'next', 'nextOuter', 'rewind', 'valid'],
+    ];
+
+    foreach ($methodExpectations as $class => $expectedMethods) {
+        $reflection = new ReflectionClass($class);
+        $methods = array_map(
+            static fn (ReflectionMethod $method): string => $method->getName(),
+            array_filter(
+                $reflection->getMethods(ReflectionMethod::IS_PUBLIC),
+                static fn (ReflectionMethod $method): bool => $method->getDeclaringClass()->getName() === $class
+            )
+        );
+        sort($methods);
+        sort($expectedMethods);
+        $tests->same($expectedMethods, $methods);
+    }
+});
+
+$tests->it('Global helper functions remain defined', function () use ($tests): void {
+    $expectedFunctions = ['array_mergeIterable', 'flow', 'is_iterable', 'is_iterableEx', 'iterable_to_array', 'iterator', 'NOIT'];
+    foreach ($expectedFunctions as $function) {
+        $tests->truthy(function_exists($function), 'Missing global helper: ' . $function);
+    }
+});
+
 // --- Iterator helper classes ----------------------------------------------------
 
 $tests->it('CachedIterator caches the first traversal and replays it on subsequent passes', function () use ($tests): void {
@@ -634,6 +790,10 @@ $tests->it('CachedIterator caches the first traversal and replays it on subseque
     $cached = new CachedIterator($source);
 
     $tests->same([1, 2, 3], iterator_to_array($cached));
+    $cached->rewind();
+    $inner = $cached->getInnerIterator();
+    $tests->truthy($inner instanceof ArrayIterator);
+    $tests->same([1, 2, 3], iterator_to_array($inner));
     $tests->same([1, 2, 3], iterator_to_array($cached));
 });
 
@@ -769,6 +929,15 @@ $tests->it('SingleValueIterator yields one value and then terminates', function 
 
 $tests->it('UnfoldIterator expands nested iterables while optionally preserving keys', function () use ($tests): void {
     $iterator = new UnfoldIterator([1, ['a' => 2, 'b' => 3], 4], UnfoldIterator::USE_ORIGINAL_KEYS);
+    $inner = $iterator->getInnerIterator();
+    $tests->same([1, ['a' => 2, 'b' => 3], 4], iterator_to_array($inner));
+    $tests->same([0 => 1, 'a' => 2, 'b' => 3, 2 => 4], iterator_to_array($iterator));
+
+    $withEmpty = new UnfoldIterator([[], ['k' => 'value'], 7]);
+    $withEmpty->rewind();
+    $withEmpty->nextOuter();
+    $tests->truthy($withEmpty->valid());
+    $tests->same('value', $withEmpty->current());
     $tests->same([0 => 1, 'a' => 2, 'b' => 3, 2 => 4], iterator_to_array($iterator));
 });
 
