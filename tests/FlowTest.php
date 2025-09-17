@@ -2,6 +2,7 @@
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/TestRunner.php';
 
+use PhpKit\Flow\FilesystemFlow;
 use PhpKit\Flow\Flow;
 use PhpKit\Flow\Iterators\CachedIterator;
 use PhpKit\Flow\Iterators\ConditionalIterator;
@@ -16,6 +17,42 @@ use PhpKit\Flow\Iterators\ReduceIterator;
 use PhpKit\Flow\Iterators\ReindexIterator;
 use PhpKit\Flow\Iterators\SingleValueIterator;
 use PhpKit\Flow\Iterators\UnfoldIterator;
+
+function flowTest_makeTempDir(): string
+{
+    $dir = sys_get_temp_dir() . '/flow-test-' . uniqid('', true);
+    if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
+        throw new RuntimeException('Unable to create temporary directory for Flow tests.');
+    }
+    return $dir;
+}
+
+function flowTest_removeDir(string $dir): void
+{
+    if (!is_dir($dir)) {
+        return;
+    }
+
+    $entries = scandir($dir);
+    if ($entries === false) {
+        return;
+    }
+
+    foreach ($entries as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+
+        $path = $dir . DIRECTORY_SEPARATOR . $entry;
+        if (is_dir($path)) {
+            flowTest_removeDir($path);
+        } else {
+            @unlink($path);
+        }
+    }
+
+    @rmdir($dir);
+}
 
 $tests = new TestRunner();
 
@@ -240,9 +277,83 @@ $tests->it('pack materialises values with sequential integer keys', function () 
     $tests->same(['a', 'b'], Flow::from([2 => 'a', 4 => 'b'])->pack()->all());
 });
 
+$tests->it('prepend adds iterables in front of the existing chain', function () use ($tests): void {
+    $result = Flow::from([3, 4])
+        ->prepend([[1, 2], Flow::range(5, 5)])
+        ->pack()
+        ->all();
+
+    $tests->same([1, 2, 5, 3, 4], $result);
+});
+
+$tests->it('prependValue injects a single element with a custom key', function () use ($tests): void {
+    $result = Flow::from(['a' => 1])->prependValue(0, 'start')->all();
+    $tests->same(['start' => 0, 'a' => 1], $result);
+});
+
 $tests->it('reduce collapses the stream into a single accumulated value', function () use ($tests): void {
     $result = Flow::from([1, 2, 3])->reduce(fn (int $prev, int $value): int => $prev + $value, 0)->all();
     $tests->same([6], $result);
+});
+
+$tests->it('recursive walks nested structures using RecursiveIteratorIterator modes', function () use ($tests): void {
+    $tree = [
+        ['name' => 'root', 'children' => [
+            ['name' => 'left'],
+            ['name' => 'right'],
+        ]],
+    ];
+
+    $selfFirst = Flow::from($tree)
+        ->recursive(function (array $node): ?array {
+            return $node['children'] ?? null;
+        })
+        ->map(fn (array $node): string => $node['name'])
+        ->pack()
+        ->all();
+    $tests->same(['root', 'left', 'right'], $selfFirst);
+
+    $leavesOnly = Flow::from($tree)
+        ->recursive(function (array $node): ?array {
+            return $node['children'] ?? null;
+        }, RecursiveIteratorIterator::LEAVES_ONLY)
+        ->map(fn (array $node): string => $node['name'])
+        ->pack()
+        ->all();
+    $tests->same(['left', 'right'], $leavesOnly);
+});
+
+$tests->it('recursiveUnfold replaces nodes with their expanded children', function () use ($tests): void {
+    $tree = [
+        ['name' => 'root', 'children' => [
+            ['name' => 'leaf1'],
+            ['name' => 'branch', 'children' => [
+                ['name' => 'leaf2'],
+            ]],
+        ]],
+    ];
+
+    $expand = function (array $node) {
+        if (isset($node['children'])) {
+            return Flow::from($node['children']);
+        }
+        return $node['name'];
+    };
+
+    $leaves = Flow::from($tree)
+        ->recursiveUnfold($expand)
+        ->pack()
+        ->all();
+    $tests->same(['leaf1', 'leaf2'], $leaves);
+
+    $withParents = Flow::from($tree)
+        ->recursiveUnfold($expand, true)
+        ->map(function ($value) {
+            return is_array($value) ? $value['name'] : $value;
+        })
+        ->pack()
+        ->all();
+    $tests->same(['root', 'leaf1', 'branch', 'leaf2'], $withParents);
 });
 
 // --- Regular expression helpers -------------------------------------------------
@@ -373,6 +484,85 @@ $tests->it('where filters values using a boolean predicate', function () use ($t
 $tests->it('while_ stops iteration as soon as the predicate fails', function () use ($tests): void {
     $result = Flow::range(1, 6)->while_(fn (int $value): bool => $value < 4)->pack()->all();
     $tests->same([1, 2, 3], $result);
+});
+
+// --- FilesystemFlow utilities ----------------------------------------------------
+
+$tests->it('FilesystemFlow::from and glob enumerate directory contents', function () use ($tests): void {
+    $dir = flowTest_makeTempDir();
+
+    try {
+        file_put_contents($dir . '/file.txt', 'file');
+        mkdir($dir . '/sub');
+        file_put_contents($dir . '/sub/nested.log', 'log');
+
+        $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::SKIP_DOTS;
+
+        $entries = FilesystemFlow::from($dir, $flags)
+            ->map(fn (SplFileInfo $info): string => $info->getFilename())
+            ->pack()
+            ->all();
+        sort($entries);
+        $tests->same(['file.txt', 'sub'], $entries);
+
+        $matches = FilesystemFlow::glob($dir . '/*.txt')
+            ->map(fn (SplFileInfo $info): string => $info->getFilename())
+            ->pack()
+            ->all();
+        $tests->same(['file.txt'], $matches);
+    } finally {
+        flowTest_removeDir($dir);
+    }
+});
+
+$tests->it('FilesystemFlow recursive helpers walk nested structures and filter entries', function () use ($tests): void {
+    $dir = flowTest_makeTempDir();
+
+    try {
+        mkdir($dir . '/sub');
+        mkdir($dir . '/sub/nested');
+        file_put_contents($dir . '/file.txt', 'root');
+        file_put_contents($dir . '/sub/inner.txt', 'inner');
+        file_put_contents($dir . '/sub/nested/deep.txt', 'deep');
+
+        $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::SKIP_DOTS;
+        $relative = function (SplFileInfo $info) use ($dir): string {
+            $path = $info->getPathname();
+            return ltrim(str_replace($dir, '', $path), DIRECTORY_SEPARATOR);
+        };
+
+        $all = FilesystemFlow::recursiveFrom($dir, $flags)
+            ->map($relative)
+            ->pack()
+            ->all();
+        sort($all);
+        $tests->same(['file.txt', 'sub', 'sub/inner.txt', 'sub/nested', 'sub/nested/deep.txt'], $all);
+
+        $directories = FilesystemFlow::recursiveFrom($dir, $flags)
+            ->onlyDirectories()
+            ->map($relative)
+            ->pack()
+            ->all();
+        sort($directories);
+        $tests->same(['sub', 'sub/nested'], $directories);
+
+        $files = FilesystemFlow::recursiveFrom($dir, $flags)
+            ->onlyFiles()
+            ->map($relative)
+            ->pack()
+            ->all();
+        sort($files);
+        $tests->same(['file.txt', 'sub/inner.txt', 'sub/nested/deep.txt'], $files);
+
+        $globbed = FilesystemFlow::recursiveGlob($dir, '*.txt')
+            ->map($relative)
+            ->pack()
+            ->all();
+        sort($globbed);
+        $tests->same(['file.txt', 'sub/inner.txt', 'sub/nested/deep.txt'], $globbed);
+    } finally {
+        flowTest_removeDir($dir);
+    }
 });
 
 // --- Global helper functions ----------------------------------------------------
