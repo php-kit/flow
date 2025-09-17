@@ -8,10 +8,13 @@
 
 ## Why fluent iterators?
 
-Flow provides a fluent interface to assemble chains of iterators and other data processing operations. Instead of
-collecting values into arrays and managing nested `foreach` loops manually, you compose small, intention-revealing
-operations that stream data from one step to the next. The expressive syntax makes it **easy and enjoyable** to build
-sophisticated processing pipelines while keeping memory usage low and the intent of each transformation crystal clear.
+PHP has a rich set of iterators and other data processing tools - like the iterators in the Standard PHP Library (SPL) - but they are often not used to their full potential, as they are cumbersome to use and require a lot of boilerplate code.
+
+Flow provides a fluent interface to assemble chains of iterators and other data processing operations, making it easy to write complex data processing pipelines in a concise and readable way.
+
+Instead of collecting values into arrays and managing nested `foreach` loops manually, you compose small, intention-revealing operations that stream data from one step to the next.
+
+The expressive syntax makes it **easy and enjoyable** to build sophisticated processing pipelines while keeping **memory usage low** and the intent of each transformation crystal clear.
 
 ### Example: data crunching in one expression
 
@@ -31,15 +34,23 @@ $topCustomers = Flow::from($orders)
     ->all();
 ```
 
-The same workflow using temporary arrays and for-loops would be longer, harder to read and would duplicate values in
-memory multiple times. A Flow pipeline keeps the computation streaming, lets you re-use SPL iterators seamlessly and
-makes experimentation as simple as inserting or removing a step.
+The same workflow using temporary arrays and for-loops would be longer, harder to read and would duplicate values in memory multiple times.
+
+A Flow pipeline keeps the computation streaming, lets you re-use SPL iterators seamlessly and makes experimentation as simple as inserting or removing a step.
 
 ## Flow is **not** the usual Collection-style utility library
 
-Typical Collection-like classes use arrays underneath. But `Flow`, even though it also uses a chainable fluent interface, is both an `Iterator` and a `Traversable` (therefore with native PHP support), and works perfectly with **Generators** and **SPL iterators**, with no arrays underneath. **Each iteration step only requires one value to be in memory (it can be generated on the fly), and the data is streamed through the pipeline**.
+Although many libraries exist for implementing collections (e.g. Laravel Collections), Flow is different, even though, on the surface, it seems similar, as it also provides a chainable fluent interface.
 
-Since Flow implements both `Iterator` and `Traversable`, you can use a Flow object anywhere you would use a `Traversable` or `Iterator`. For example, you can use `foreach` directly over a Flow object:
+Typical Collection-like classes use arrays underneath. But Flow (most of the time) **does not**.
+
+
+ Flow is both an `Iterator` and a `Traversable` (therefore with native PHP support), and works perfectly with **Generators**, **SPL iterators** and `foreach` loops.
+
+ Each iteration step only requires **one value** to be in memory (and it can be generated on the fly), and the data is streamed through the pipeline, with **no intermediate storage** and **without needless data copying**.
+
+You can use a Flow object anywhere an `Iterator` or `Traversable` interface is expected.
+For example, you can use `foreach` directly over a Flow object:
 
 ```php
 foreach (Flow::from([1, 2, 3]) as $value) {
@@ -63,6 +74,21 @@ function processItems(Traversable $items) {
 processItems(Flow::from($data)->map($transformer));
 ```
 
+You can even generate values on the fly:
+
+```php
+$values = Flow::from(function () {
+    for ($i = 1; $i <= 3; $i++) {
+        yield $i;
+    }
+});
+```
+In this example, **the values are generated only when they are read, not when the flow is created**, which is a **major difference** from traditional collections.
+
+This also means that if the iteration is not fully consumed, some values may not be generated at all. This lazy evaluation is particularly important when value generation is computationally expensive, as it avoids unnecessary computation.
+
+Additionally, when processing very large datasets, Flow maintains minimal memory usage by processing values one at a time as they stream through the pipeline, rather than loading the entire dataset into memory.
+
 ## Fluent operations reference
 
 ### Creating flows
@@ -73,7 +99,7 @@ processItems(Flow::from($data)->map($transformer));
 | `Flow::from($src)` | Convenience constructor that forwards to `new Flow($src)`.
 | `Flow::range($from, $to, $step = 1)` | Streams a numeric range (inclusive) without allocating intermediate arrays.
 | `Flow::sequence($list)` | Concatenates a list of iterables and iterates them sequentially.
-| `Flow::combine($inputs, array $fields = null, int $flags = MultipleIterator::MIT_NEED_ANY | MultipleIterator::MIT_KEYS_ASSOC)` | Zips multiple iterables together, yielding keyed tuples of values.
+| `Flow::combine($inputs, array $fields = null, int $flags = MultipleIterator::MIT_NEED_ANY \| MultipleIterator::MIT_KEYS_ASSOC)` | Zips multiple iterables together, yielding keyed tuples of values.
 | `Flow::void()` | Produces an empty flow, handy as a neutral element when composing.
 
 ### Combining and extending sequences
@@ -149,7 +175,7 @@ processItems(Flow::from($data)->map($transformer));
 
 | Method | Description |
 | --- | --- |
-| `FilesystemFlow::from(string $path, int $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::SKIP_DOTS)` | Streams directory entries with full control over SPL flags.
+| `FilesystemFlow::from(string $path, int $flags = FilesystemIterator::KEY_AS_PATHNAME \| FilesystemIterator::CURRENT_AS_FILEINFO \| FilesystemIterator::SKIP_DOTS)` | Streams directory entries with full control over SPL flags.
 | `FilesystemFlow::glob(string $pattern, int $flags = 0)` | Iterates filesystem matches similar to `glob()` but lazily.
 | `FilesystemFlow::recursiveFrom(string $path, int $flags = FilesystemIterator::KEY_AS_PATHNAME \| FilesystemIterator::CURRENT_AS_FILEINFO \| FilesystemIterator::SKIP_DOTS, int $mode = RecursiveIteratorIterator::SELF_FIRST)` | Builds a recursive traversal using `RecursiveIteratorIterator` and a configurable recursion mode.
 | `FilesystemFlow::recursiveGlob(string $rootDir, string $pattern, int $flags = 0)` | Performs recursive glob searches, yielding `SplFileInfo` objects or paths according to flags.
@@ -190,8 +216,7 @@ The `globals.php` helpers make it effortless to adopt Flow throughout an applica
 
 ## Notes
 
-Some operations (such as `reverse()` or `sort()`) need to materialize the stream into an array before continuing. The
-library only buffers data when absolutely necessary and automatically returns to streaming mode afterwards.
+Some operations (such as `reverse()` or `sort()`) need to materialize the stream into an array before continuing. The library only buffers data when absolutely necessary and automatically returns to streaming mode afterwards.
 
 ## License
 
