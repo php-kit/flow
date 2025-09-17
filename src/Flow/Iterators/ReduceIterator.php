@@ -37,22 +37,22 @@ class ReduceIterator implements Iterator
     $this->seed = $seedValue;
   }
 
-  public function current ()
+  public function current (): mixed
   {
     return $this->result;
   }
 
-  public function key ()
+  public function key (): mixed
   {
     return $this->idx;
   }
 
-  public function next ()
+  public function next (): void
   {
     ++$this->idx;
   }
 
-  public function rewind ()
+  public function rewind (): void
   {
     $this->idx = 0;
     $prev      = $this->seed;
@@ -66,7 +66,7 @@ class ReduceIterator implements Iterator
     $this->result = $prev;
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     return !$this->idx;
   }

@@ -36,24 +36,24 @@ class UnfoldIterator implements OuterIterator
     $this->flags = $flags;
   }
 
-  function current ()
+  function current (): mixed
   {
     return isset($this->outer) ? $this->outer->current () : $this->inner->current ();
   }
 
-  function getInnerIterator ()
+  function getInnerIterator (): Iterator
   {
     return $this->inner;
   }
 
-  function key ()
+  function key (): mixed
   {
     return $this->flags & self::USE_ORIGINAL_KEYS
       ? (isset($this->outer) ? $this->outer->key () : $this->inner->key ())
       : $this->index;
   }
 
-  function next ()
+  function next (): void
   {
     ++$this->index;
     if (isset($this->outer)) {
@@ -64,14 +64,14 @@ class UnfoldIterator implements OuterIterator
     $this->nextOuter ();
   }
 
-  function rewind ()
+  function rewind (): void
   {
     $this->index = 0;
     $this->inner->rewind ();
     $this->nextOuter ();
   }
 
-  function valid ()
+  function valid (): bool
   {
     return isset($this->outer) || $this->inner->valid ();
   }
@@ -79,7 +79,7 @@ class UnfoldIterator implements OuterIterator
   /**
    * Advance the inner iterator until we get a non-empty outer iterator.
    */
-  function nextOuter ()
+  function nextOuter (): void
   {
     while ($this->inner->valid ()) {
       $v = $this->inner->current ();

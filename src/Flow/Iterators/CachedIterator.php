@@ -1,6 +1,7 @@
 <?php
 namespace PhpKit\Flow\Iterators;
 use ArrayIterator;
+use Iterator;
 use IteratorIterator;
 
 /**
@@ -15,29 +16,29 @@ class CachedIterator extends IteratorIterator
   /** @var ArrayIterator */
   protected $it;
 
-  public function current ()
+  public function current (): mixed
   {
     return $this->cached ? $this->it->current () : ($this->data[] = parent::current ());
   }
 
-  public function getInnerIterator ()
+  public function getInnerIterator (): ?Iterator
   {
     return $this->cached ? $this->it : parent::getInnerIterator ();
   }
 
-  public function key ()
+  public function key (): mixed
   {
     return $this->cached ? $this->it->key () : parent::key ();
   }
 
-  public function next ()
+  public function next (): void
   {
     if ($this->cached)
       $this->it->next ();
     else parent::next ();
   }
 
-  public function rewind ()
+  public function rewind (): void
   {
     if (isset($this->data)) {
       // First iteration has been done.
@@ -54,7 +55,7 @@ class CachedIterator extends IteratorIterator
     }
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     return $this->cached ? $this->it->valid () : parent::valid ();
   }

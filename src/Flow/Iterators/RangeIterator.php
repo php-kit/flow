@@ -26,29 +26,29 @@ class RangeIterator implements Iterator
     $this->step = $step;
   }
 
-  public function current ()
+  public function current (): mixed
   {
     return $this->cur;
   }
 
-  public function key ()
+  public function key (): mixed
   {
     return $this->key;
   }
 
-  public function next ()
+  public function next (): void
   {
     $this->cur += $this->step;
     ++$this->key;
   }
 
-  public function rewind ()
+  public function rewind (): void
   {
     $this->key = 0;
     $this->cur = $this->from;
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     return $this->step > 0 ? $this->cur <= $this->to : $this->cur >= $this->to;
   }
