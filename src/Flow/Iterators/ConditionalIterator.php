@@ -25,7 +25,7 @@ class ConditionalIterator extends IteratorIterator
     $this->test = $test;
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     $v = parent::valid ();
     if ($v) {
