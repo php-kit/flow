@@ -18,27 +18,27 @@ class SingleValueIterator implements Iterator
     $this->v = $value;
   }
 
-  public function current ()
+  public function current (): mixed
   {
     return $this->v;
   }
 
-  public function key ()
+  public function key (): mixed
   {
     return $this->read ? 1 : 0;
   }
 
-  public function next ()
+  public function next (): void
   {
     $this->read = true;
   }
 
-  public function rewind ()
+  public function rewind (): void
   {
     $this->read = false;
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     return !$this->read;
   }

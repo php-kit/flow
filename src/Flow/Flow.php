@@ -103,7 +103,7 @@ class Flow implements Iterator
    *                           <p>Default: MIT_NEED_ANY | MIT_KEYS_ASSOC
    * @return static
    */
-  static function combine ($inputs, array $fields = null, $flags = 2)
+  static function combine ($inputs, ?array $fields = null, $flags = 2)
   {
     $mul = new MultipleIterator($flags);
     foreach (iterator ($inputs) as $k => $it)
@@ -270,7 +270,7 @@ class Flow implements Iterator
     return $this;
   }
 
-  public function current ()
+  public function current (): mixed
   {
     return $this->it->current ();
   }
@@ -396,7 +396,7 @@ class Flow implements Iterator
    * @link http://php.net/manual/en/iteratoraggregate.getiterator.php
    * @return Iterator
    */
-  public function getIterator ()
+  public function getIterator (): Iterator
   {
     if (isset ($this->data)) {
       $this->it = new ArrayIterator ($this->data);
@@ -424,7 +424,7 @@ class Flow implements Iterator
     })->unfold ();
   }
 
-  public function key ()
+  public function key (): mixed
   {
     return $this->it->key ();
   }
@@ -474,7 +474,7 @@ class Flow implements Iterator
     return $this;
   }
 
-  public function next ()
+  public function next (): void
   {
     $this->it->next ();
   }
@@ -681,7 +681,9 @@ class Flow implements Iterator
     $this->setIterator (
       new RegexIterator ($this->getIterator (), $regexp, RegexIterator::REPLACE, $useKeys ? RegexIterator::USE_KEY : 0)
     );
-    $this->it->replacement = $replaceWith;
+    if ($this->it instanceof RegexIterator) {
+      $this->it->setReplacement ($replaceWith);
+    }
     return $this;
   }
 
@@ -766,7 +768,7 @@ class Flow implements Iterator
     return $this;
   }
 
-  public function rewind ()
+  public function rewind (): void
   {
     $this->it->rewind ();
   }
@@ -822,7 +824,7 @@ class Flow implements Iterator
    * @param callable $fn    Can only be specified for sort types beginning with letter `u` (ex: `usort`).
    * @return $this
    */
-  function sort ($type = 'sort', $flags = SORT_REGULAR, callable $fn = null)
+  function sort ($type = 'sort', $flags = SORT_REGULAR, ?callable $fn = null)
   {
     if (!isset (self::$SORT_TYPES[$type]))
       throw new InvalidArgumentException ("Bad sort type: $type");
@@ -873,7 +875,7 @@ class Flow implements Iterator
     return $this;
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     return $this->it->valid ();
   }

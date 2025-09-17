@@ -33,7 +33,7 @@ class LoopIterator extends IteratorIterator
     return $this;
   }
 
-  public function next ()
+  public function next (): void
   {
     parent::next ();
     if ($this->limit && $this->loops) {
@@ -41,7 +41,7 @@ class LoopIterator extends IteratorIterator
     }
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     if ($this->limit && $this->loops) {
       $v = parent::valid ();

@@ -52,22 +52,22 @@ class FunctionIterator implements Iterator
     $this->seed = $seed;
   }
 
-  function current ()
+  function current (): mixed
   {
     return $this->cur;
   }
 
-  function key ()
+  function key (): mixed
   {
     return $this->key;
   }
 
-  function next ()
+  function next (): void
   {
     ++$this->key;
   }
 
-  function rewind ()
+  function rewind (): void
   {
     $this->key  = 0;
     $this->prev = $this->seed;
@@ -75,7 +75,7 @@ class FunctionIterator implements Iterator
     $this->stop = false;
   }
 
-  function valid ()
+  function valid (): bool
   {
     if ($this->stop) return false;
     $fn = $this->fn;

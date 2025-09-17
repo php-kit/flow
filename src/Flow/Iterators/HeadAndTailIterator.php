@@ -33,29 +33,29 @@ class HeadAndTailIterator implements Iterator
     $this->keepTailKeys = $keepTailKeys;
   }
 
-  public function current ()
+  public function current (): mixed
   {
     return $this->idx ? $this->tail->current () : $this->head;
   }
 
-  public function key ()
+  public function key (): mixed
   {
     return $this->idx ? ($this->keepTailKeys ? $this->tail->key () : $this->idx) : $this->headKey;
   }
 
-  public function next ()
+  public function next (): void
   {
     if (++$this->idx > 1)
       $this->tail->next ();
   }
 
-  public function rewind ()
+  public function rewind (): void
   {
     $this->idx = 0;
     $this->tail->rewind ();
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     return !$this->idx || $this->tail->valid ();
   }

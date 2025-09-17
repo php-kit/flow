@@ -33,17 +33,17 @@ class MapIterator extends IteratorIterator
     $this->arg = $arg;
   }
 
-  function current ()
+  function current (): mixed
   {
     return $this->cur;
   }
 
-  function key ()
+  function key (): mixed
   {
     return $this->key;
   }
 
-  public function valid ()
+  public function valid (): bool
   {
     $v = parent::valid ();
     if ($v) {
