@@ -682,7 +682,12 @@ class Flow implements Iterator
       new RegexIterator ($this->getIterator (), $regexp, RegexIterator::REPLACE, $useKeys ? RegexIterator::USE_KEY : 0)
     );
     if ($this->it instanceof RegexIterator) {
-      $this->it->setReplacement ($replaceWith);
+      if (method_exists ($this->it, 'setReplacement')) {
+        $this->it->setReplacement ($replaceWith);
+      }
+      else {
+        $this->it->replacement = $replaceWith;
+      }
     }
     return $this;
   }
