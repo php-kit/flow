@@ -634,8 +634,6 @@ $tests->it('NOIT() returns a reusable empty iterator', function () use ($tests):
     $tests->same($first, $second);
 });
 
-// --- API coverage guard rails ----------------------------------------------------
-
 $tests->it('Flow exposes the expected public API surface', function () use ($tests): void {
     $reflection = new ReflectionClass(Flow::class);
     $methods = array_map(
@@ -940,6 +938,7 @@ $tests->it('UnfoldIterator expands nested iterables while optionally preserving 
     $withEmpty->nextOuter();
     $tests->truthy($withEmpty->valid());
     $tests->same('value', $withEmpty->current());
+    $tests->same([0 => 1, 'a' => 2, 'b' => 3, 2 => 4], iterator_to_array($iterator));
 });
 
 exit($tests->report());
