@@ -3,21 +3,22 @@
 class TestRunner
 {
     private int $tests = 0;
-    /** @var array<int, array{string, Throwable}> */
-    private array $failures = [];
+    /** @var array<int, array{int, string, Throwable|null}> */
+    private array $results = [];
 
     /**
      * @param callable():void $test
      */
     public function it(string $description, callable $test): void
     {
-        $this->tests++;
+        $index = ++$this->tests;
         try {
             $test();
-            echo '.';
+            $this->results[] = [$index, $description, null];
+            $this->printResult($index, '✅', $description);
         } catch (Throwable $e) {
-            $this->failures[] = [$description, $e];
-            echo 'F';
+            $this->results[] = [$index, $description, $e];
+            $this->printResult($index, '❌', $description);
         }
     }
 
@@ -48,17 +49,33 @@ class TestRunner
 
     public function report(): int
     {
-        echo PHP_EOL . PHP_EOL;
-        if ($this->failures === []) {
+        echo PHP_EOL;
+        $failures = array_filter(
+            $this->results,
+            static fn (array $result): bool => $result[2] instanceof Throwable
+        );
+
+        if ($failures === []) {
             printf("%d tests passed.\n", $this->tests);
             return 0;
         }
 
-        printf("%d of %d tests failed:\n", count($this->failures), $this->tests);
-        foreach ($this->failures as [$description, $error]) {
-            printf("- %s: %s\n", $description, $error->getMessage());
+        printf("%d of %d tests failed:\n", count($failures), $this->tests);
+        foreach ($failures as [$index, $description, $error]) {
+            printf("- %s. %s: %s\n", $this->formatIndex($index), $description, $error->getMessage());
         }
 
         return 1;
+    }
+
+    private function printResult(int $index, string $symbol, string $description): void
+    {
+        printf("%s. %s %s\n", $this->formatIndex($index), $symbol, $description);
+    }
+
+    private function formatIndex(int $index): string
+    {
+        $digits = max(2, strlen((string) $index));
+        return str_pad((string) $index, $digits, '0', STR_PAD_LEFT);
     }
 }

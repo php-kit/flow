@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/TestRunner.php';
@@ -938,7 +939,7 @@ $tests->it('UnfoldIterator expands nested iterables while optionally preserving 
     $withEmpty->nextOuter();
     $tests->truthy($withEmpty->valid());
     $tests->same('value', $withEmpty->current());
-    $tests->same([0 => 1, 'a' => 2, 'b' => 3, 2 => 4], iterator_to_array($iterator));
+    $tests->same([0 => 'value', 1 => 7], iterator_to_array($withEmpty));
 });
 
 exit($tests->report());

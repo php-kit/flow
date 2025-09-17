@@ -35,6 +35,34 @@ The same workflow using temporary arrays and for-loops would be longer, harder t
 memory multiple times. A Flow pipeline keeps the computation streaming, lets you re-use SPL iterators seamlessly and
 makes experimentation as simple as inserting or removing a step.
 
+## Flow is **not** the usual Collection-style utility library
+
+Typical Collection-like classes use arrays underneath. But `Flow`, even though it also uses a chainable fluent interface, is both an `Iterator` and a `Traversable` (therefore with native PHP support), and works perfectly with **Generators** and **SPL iterators**, with no arrays underneath. **Each iteration step only requires one value to be in memory (it can be generated on the fly), and the data is streamed through the pipeline**.
+
+Since Flow implements both `Iterator` and `Traversable`, you can use a Flow object anywhere you would use a `Traversable` or `Iterator`. For example, you can use `foreach` directly over a Flow object:
+
+```php
+foreach (Flow::from([1, 2, 3]) as $value) {
+    echo $value;
+}
+```
+
+You can also pass Flow objects to any function that expects an `Iterator` or `Traversable`:
+
+```php
+// Flow works seamlessly with SPL functions
+$count = iterator_count(Flow::from([1, 2, 3])->where(fn($x) => $x > 1));
+
+// Or with any function expecting a Traversable
+function processItems(Traversable $items) {
+    foreach ($items as $item) {
+        // process each item
+    }
+}
+
+processItems(Flow::from($data)->map($transformer));
+```
+
 ## Fluent operations reference
 
 ### Creating flows
@@ -71,12 +99,12 @@ makes experimentation as simple as inserting or removing a step.
 | `mapAndFilter(callable $fn, $arg = null)` | Combines mapping and filtering: return a value to keep it, or `null` to drop it.
 | `flip()` | Swaps keys with their corresponding values while iterating.
 | `keys()` | Replaces each value by its key and reindexes the keys sequentially.
-| `reindex(int $start = 0, int $step = 1)` | Rewrites keys as a numeric sequence without materialising the data.
+| `reindex(int $start = 0, int $step = 1)` | Rewrites keys as a numeric sequence without materializing the data.
 | `regex(string $pattern, int $flags = 0, bool $useKeys = false)` | Replaces each item with the full set of regular expression matches.
 | `regexExtract(string $pattern, int $flags = 0, bool $useKeys = false)` | Extracts the first regex match for each item.
-| `regexMap(string $pattern, string $replacement, bool $useKeys = false)` | Performs regex replacements on the fly using `RegexIterator::setReplacement()`.
+| `regexMap(string $pattern, string $replaceWith, bool $useKeys = false)` | Performs regex replacements on the fly using `RegexIterator::setReplacement()`.
 | `regexSplit(string $pattern, int $flags = 0, bool $useKeys = false)` | Splits strings by regex and yields the resulting fragments.
-| `swap(callable $fn)` | Materialises the stream, lets a callback replace the dataset, then restarts iteration.
+| `swap(callable $fn)` | Materializes the stream, lets a callback replace the dataset, then restarts iteration.
 | `reduce(callable $fn, $seedValue = null)` | Collapses the flow into a single value by folding with an accumulator.
 
 ### Filtering, gating and flow control
@@ -91,18 +119,18 @@ makes experimentation as simple as inserting or removing a step.
 | `repeatWhile(callable $fn)` | Replays the flow until the callback tells it to stop.
 | `only(int $n)` | Limits the flow to the first *n* items, regardless of key types.
 | `skip(int $n = 1)` | Skips the first *n* items and continues streaming.
-| `drop(int $n = 1)` | Removes the last *n* items (materialises and trims the array).
+| `drop(int $n = 1)` | Removes the last *n* items (materializes and trims the array).
 | `slice(int $offset = 0, int $count = -1)` | Delegates to `LimitIterator` to take a window of items.
 | `noRewind()` | Wraps the iterator with `NoRewindIterator` so it cannot be rewound after the first traversal.
 
-### Ordering, caching and materialisation
+### Ordering, caching and materialization
 
 | Method | Description |
 | --- | --- |
-| `sort(string $type = 'sort', int $flags = SORT_REGULAR, ?callable $fn = null)` | Materialises and delegates to the native PHP sort family, preserving keys where appropriate.
-| `reverse(bool $preserveKeys = false)` | Materialises, reverses and exposes the sequence through a generator.
-| `cache()` | Memoises the iterator so future traversals re-use cached values.
-| `pack()` | Materialises and converts the flow into a zero-based array while retaining order.
+| `sort(string $type = 'sort', int $flags = SORT_REGULAR, ?callable $fn = null)` | Materializes and delegates to the native PHP sort family, preserving keys where appropriate.
+| `reverse(bool $preserveKeys = false)` | Materializes, reverses and exposes the sequence through a generator.
+| `cache()` | Memoizes the iterator so future traversals re-use cached values.
+| `pack()` | Materializes and converts the flow into a zero-based array while retaining order.
 | `all()` | Collects the entire dataset into an array, preserving keys.
 
 ### Inspecting and manual iteration helpers
@@ -112,7 +140,7 @@ makes experimentation as simple as inserting or removing a step.
 | `fetch()` | Reads and advances a single value from the flow (auto-rewinds on first call).
 | `fetchKey()` | Reads and advances a single key from the flow.
 | `current(): mixed`, `key(): mixed`, `next(): void`, `rewind(): void`, `valid(): bool` | Implement the native `Iterator` interface so you can loop over `Flow` directly.
-| `getIterator(): Iterator` | Returns the current iterator (materialising data if needed).
+| `getIterator(): Iterator` | Returns the current iterator (materializing data if needed).
 | `setIterator($iterable)` | Replaces the underlying iterator; intended for advanced scenarios.
 
 ### Filesystem flows
@@ -123,7 +151,7 @@ makes experimentation as simple as inserting or removing a step.
 | --- | --- |
 | `FilesystemFlow::from(string $path, int $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::SKIP_DOTS)` | Streams directory entries with full control over SPL flags.
 | `FilesystemFlow::glob(string $pattern, int $flags = 0)` | Iterates filesystem matches similar to `glob()` but lazily.
-| `FilesystemFlow::recursiveFrom(string $path, int $flags = default, int $mode = FilesystemFlow::DIRECTORIES_FIRST)` | Builds a recursive traversal using `RecursiveIteratorIterator` and a configurable recursion mode.
+| `FilesystemFlow::recursiveFrom(string $path, int $flags = FilesystemIterator::KEY_AS_PATHNAME \| FilesystemIterator::CURRENT_AS_FILEINFO \| FilesystemIterator::SKIP_DOTS, int $mode = RecursiveIteratorIterator::SELF_FIRST)` | Builds a recursive traversal using `RecursiveIteratorIterator` and a configurable recursion mode.
 | `FilesystemFlow::recursiveGlob(string $rootDir, string $pattern, int $flags = 0)` | Performs recursive glob searches, yielding `SplFileInfo` objects or paths according to flags.
 | `onlyDirectories()` | Filters to directory entries only (requires `CURRENT_AS_FILEINFO`).
 | `onlyFiles()` | Filters to file entries only (requires `CURRENT_AS_FILEINFO`).
@@ -134,7 +162,7 @@ Flow ships with a set of custom iterators that integrate seamlessly with SPL:
 
 | Iterator | Purpose |
 | --- | --- |
-| `CachedIterator` | *Memoises* another iterator so that subsequent traversals reuse cached values.
+| `CachedIterator` | *Memoizes* another iterator so that subsequent traversals reuse cached values.
 | `ConditionalIterator` | Iterates until a callback vetoes further processing.
 | `FlipIterator` | Swaps keys for values (and optionally values for keys) while delegating iteration.
 | `FunctionIterator` | Creates generators from callbacks so you can yield values without native generators.
@@ -162,7 +190,7 @@ The `globals.php` helpers make it effortless to adopt Flow throughout an applica
 
 ## Notes
 
-Some operations (such as `reverse()` or `sort()`) need to materialise the stream into an array before continuing. The
+Some operations (such as `reverse()` or `sort()`) need to materialize the stream into an array before continuing. The
 library only buffers data when absolutely necessary and automatically returns to streaming mode afterwards.
 
 ## License
